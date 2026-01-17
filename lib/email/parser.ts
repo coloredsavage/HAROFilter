@@ -129,15 +129,23 @@ export function parseHaroEmail(
 
     for (let i = 0; i < querySections.length; i++) {
       try {
+        console.log(`🔍 Processing query section ${i + 1}:`);
+        console.log(`📝 Section preview (first 300 chars): "${querySections[i].substring(0, 300).replace(/\n/g, '\\n')}..."`);
+
         const rawQuery = parseQuerySection(querySections[i], emailId, category);
+        console.log(`📊 Extracted fields: headline="${rawQuery.headline?.substring(0, 50)}...", fullText="${rawQuery.fullText?.substring(0, 50)}...", deadline="${rawQuery.deadline}"`);
+
         const validatedQuery = validateQuery(rawQuery);
 
         if (validatedQuery) {
           queries.push(validatedQuery);
+          console.log(`✅ Query ${i + 1}: Successfully validated`);
         } else {
+          console.log(`❌ Query ${i + 1}: Failed validation - headline=${!!rawQuery.headline}, fullText=${!!rawQuery.fullText}, deadline=${!!rawQuery.deadline}`);
           parseErrors.push(`Query ${i + 1}: Failed validation - missing required fields`);
         }
       } catch (error) {
+        console.log(`❌ Query ${i + 1}: Error during parsing:`, error);
         parseErrors.push(
           `Query ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
