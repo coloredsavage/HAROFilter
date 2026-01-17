@@ -166,6 +166,7 @@ export function parseHaroEmail(
         console.log(`🔍 Processing query section ${i + 1}:`);
         console.log(`📝 Section preview (first 300 chars): "${querySections[i].substring(0, 300).replace(/\n/g, '\\n')}..."`);
 
+
         const rawQuery = parseQuerySection(querySections[i], emailId, category);
         console.log(`📊 Extracted fields: headline="${rawQuery.headline?.substring(0, 50)}...", fullText="${rawQuery.fullText?.substring(0, 50)}...", deadline="${rawQuery.deadline}"`);
 
@@ -210,35 +211,128 @@ function extractCategory(subject: string): string {
 }
 
 /**
- * Clean email body
+ * Clean email body - remove all noise and keep only core query content
  */
 function cleanEmailBody(body: string): string {
+  // Remove HTML tags first
   let cleaned = body.replace(/<[^>]*>/g, ' ');
 
+  // Remove CSS styles completely (they appear as text after HTML removal)
   cleaned = cleaned
+    // Remove CSS declarations
+    .replace(/[a-z-]+\s*:\s*[^;}]+[;}]/gi, ' ')
+    // Remove CSS selectors and blocks
+    .replace(/@media[^}]+}/gi, ' ')
+    .replace(/\.[a-z-]+\s*\{[^}]*\}/gi, ' ')
+    .replace(/#[a-z-]+\s*\{[^}]*\}/gi, ' ')
+    .replace(/[a-z]+\s*\{[^}]*\}/gi, ' ')
+
+    // Remove unsubscribe and footer content
+    .replace(/unsubscribe[\s\S]*?$/gi, ' ')
+    .replace(/manage subscription[\s\S]*$/gi, ' ')
+    .replace(/follow us on[\s\S]*$/gi, ' ')
+    .replace(/help a reporter out \d+[\s\S]*$/gi, ' ')
+    .replace(/your haro subscription address[\s\S]*$/gi, ' ')
+    .replace(/for delivery help[\s\S]*$/gi, ' ')
+
+    // Remove tokens and tracking URLs
+    .replace(/\?token=[\w.-]+/gi, ' ')
+    .replace(/eyJ[\w.-]+/gi, ' ')
+
+    // Remove sponsored/advertisement content
+    .replace(/earn high commissions[\s\S]*?become an affiliate[^.]*\./gi, ' ')
+    .replace(/sponsored[\s\S]*?queries from/gi, 'Queries from')
+    .replace(/\*+\s*INDEX\s*\*+[\s\S]*?\*+/gi, ' ')
+
+    // Remove social media and promotional content
+    .replace(/follow us on \w+[\s\S]*?https?:\/\/[^\s]+/gi, ' ')
+    .replace(/@\w+\s+https?:\/\/[^\s]+/gi, ' ')
+
+    // Remove "Back to Top" and navigation elements
+    .replace(/back to top/gi, ' ')
+    .replace(/forwarded this email\?[\s\S]*?helpareporter\.com/gi, ' ')
+
+    // Remove HARO promotional content
+    .replace(/haro connects journalists with expert sources/gi, ' ')
+
+    // Remove email artifacts
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
 
-  return cleaned.replace(/\s+/g, ' ').trim();
+    // Remove excessive whitespace and normalize
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  // Remove any remaining footer-like content at the end
+  // Look for patterns like "Help a Reporter Out 2025" or similar
+  cleaned = cleaned.replace(/help a reporter out \d{4}.*$/gi, '');
+
+  return cleaned;
 }
 
 /**
- * Split email body into individual query sections
+ * Split email body into individual query sections - focus on actual queries only
  */
 function splitIntoQueries(body: string): string[] {
-  let sections = body.split(/\n\s*---+\s*\n/);
+  // First, find where queries actually start (after index/promotional content)
+  const queryStartIndicators = [
+    /\*+\s*$/m, // End of index section with asterisks
+    /(?:\d+\s*\)\s*Summary:|Summary:)/i, // Numbered summaries
+    /^Business and Finance/im, // Category headers
+    /^Health and Pharma/im,
+    /^General$/im,
+    /^Technology$/im,
+    /^Lifestyle/im,
+    /^Podcasts/im
+  ];
 
-  if (sections.length < 2) {
-    sections = body.split(/(?=Query:)/i);
+  let queryStartIndex = 0;
+  for (const pattern of queryStartIndicators) {
+    const match = body.search(pattern);
+    if (match > queryStartIndex && match > 100) { // Must be past initial content
+      queryStartIndex = match;
+      break;
+    }
   }
 
+  // Extract only the query content portion
+  const queryContent = body.substring(queryStartIndex);
+
+  // Split into sections using multiple patterns
+  let sections: string[] = [];
+
+  // Try splitting by numbered summaries first (1) Summary:, 2) Summary:, etc.)
+  const numberedSections = queryContent.split(/(?=\d+\s*\)\s*Summary:)/i);
+  if (numberedSections.length > 1) {
+    sections = numberedSections;
+  } else {
+    // Fallback: try splitting by "Summary:" or "Query:" patterns
+    sections = queryContent.split(/(?=(?:Summary:|Query:))/i);
+  }
+
+  // Clean and filter sections to only include actual queries
   return sections
     .map(s => s.trim())
-    .filter(s => s.length > 50 && /Query:/i.test(s));
+    .filter(s => {
+      // Must have minimum length
+      if (s.length < 50) return false;
+
+      // Must contain either "Summary:" or "Query:"
+      if (!(/Summary:|Query:/i.test(s))) return false;
+
+      // Must contain essential query information (Name, Email, etc.)
+      const hasRequiredFields = /Name:|Email:|Media Outlet:|Deadline:/i.test(s);
+
+      // Skip index-only content or category headers
+      const isIndexContent = /^(Business and Finance|Health and Pharma|General|Technology|Lifestyle|Podcasts|INDEX)[\s\d\)]*$/im.test(s);
+
+      return hasRequiredFields && !isIndexContent;
+    })
+    .slice(0, 50); // Limit to reasonable number of queries
 }
 
 /**
@@ -269,9 +363,11 @@ function parseQuerySection(
   // Use cleaned text for further parsing
   const cleanedSection = aiDetection.cleanedText;
 
-  // Extract reporter name from "Name: Reporter Name" pattern
-  const nameMatch = cleanedSection.match(/Name:\s*([^\n]+)/i);
-  if (nameMatch) query.reporterName = nameMatch[1].trim();
+  // Extract reporter name from "Name: Reporter Name" pattern (single line)
+  const nameMatch = cleanedSection.match(/Name:\s*([^]+?)(?=\s+Category:)/i);
+  if (nameMatch) {
+    query.reporterName = nameMatch[1].trim();
+  }
 
   // Extract query number from section (e.g., "1) Summary:" or "Query #5")
   if (!query.haroQueryNumber) {
@@ -279,20 +375,39 @@ function parseQuerySection(
     if (numberMatch) query.haroQueryNumber = parseInt(numberMatch[1] || numberMatch[2]);
   }
 
-  // Query / Headline
-  const queryMatch = cleanedSection.match(
-    /(?:Query:|Summary:)\s*([\s\S]+?)(?=\n(?:Name:|Category:|Email:|Media Outlet:|Deadline:)|$)/i
-  );
-  if (queryMatch) {
-    query.headline = cleanTextField(queryMatch[1].trim());
+  // Query / Headline - parse the actual summary text
+  let queryMatch = null;
+
+  // Try to match "20 ) Summary: Engineer or manufacturer..."
+  queryMatch = cleanedSection.match(/\d+\s*\)\s*Summary:\s*([^]+?)(?=\s+Name:)/i);
+
+  // If not found, try "Summary: Text" format
+  if (!queryMatch) {
+    queryMatch = cleanedSection.match(/Summary:\s*([^]+?)(?=\s+Name:)/i);
   }
 
-  // Full text (longer description)
-  const fullTextMatch = cleanedSection.match(
-    /Query:\s*([\s\S]+?)(?=\n\s*(?:Requirements?:|Back to Top|------|$))/i
+  // If not found, try "Query: Text" format
+  if (!queryMatch) {
+    queryMatch = cleanedSection.match(/Query:\s*([^]+?)(?=\s+Name:)/i);
+  }
+
+  if (queryMatch) {
+    query.headline = cleanTextField(queryMatch[1].trim());
+    query.fullText = cleanTextField(queryMatch[1].trim());
+  }
+
+  // Look for additional description/requirements section
+  const descriptionMatch = cleanedSection.match(
+    /(?:Requirements?:|Description:)\s*([\s\S]+?)(?=\n\s*(?:Name:|Email:|Media Outlet:|Deadline:|$))/i
   );
-  if (fullTextMatch) {
-    query.fullText = cleanTextField(fullTextMatch[1].trim());
+  if (descriptionMatch) {
+    const description = cleanTextField(descriptionMatch[1].trim());
+    // Append to fullText if we have both
+    if (query.fullText && description && description !== query.fullText) {
+      query.fullText = `${query.fullText} ${description}`;
+    } else if (!query.fullText) {
+      query.fullText = description;
+    }
   }
 
   // Requirements
@@ -303,26 +418,33 @@ function parseQuerySection(
     query.requirements = cleanTextField(requirementsMatch[1].trim());
   }
 
-  // Deadline
-  const deadlineMatch = cleanedSection.match(
-    /Deadline:\s*([\s\S]+?)(?=\n\s*(?:Contact:|Query:|Back to Top|$))/i
-  );
-  if (deadlineMatch) query.deadline = deadlineMatch[1].trim();
+  // Deadline (single line)
+  const deadlineMatch = cleanedSection.match(/Deadline:\s*([^]+?)(?=\s+Requirements?:|$)/i);
+  if (deadlineMatch) {
+    query.deadline = deadlineMatch[1].trim();
+  }
 
-  // Contact email - detect if it's HARO reply email or direct
-  const emailMatch = cleanedSection.match(/Email:\s*([^\n]+)/i);
+  // Contact email - detect if it's HARO reply email or direct (single line)
+  const emailMatch = cleanedSection.match(/Email:\s*([^]+?)(?=\s+Media Outlet:)/i);
   if (emailMatch) {
     const email = emailMatch[1].trim();
     query.journalistEmail = email && email.includes('@') ? email : null;
     query.isDirectEmail = !email.includes('helpareporter.com');
   }
 
-  // Media outlet name and URL
-  const outletMatch = cleanedSection.match(/Media Outlet:\s*([^(]+)(?:\s*\(([^)]+)\))?/i);
+  // Media outlet name and URL (single line)
+  const outletMatch = cleanedSection.match(/Media Outlet:\s*([^]+?)(?=\s+Deadline:)/i);
   if (outletMatch) {
-    query.publication = outletMatch[1].trim();
-    if (outletMatch[2] && outletMatch[2].startsWith('http')) {
-      query.outletUrl = outletMatch[2].trim();
+    const outletText = outletMatch[1].trim();
+    // Extract URL from parentheses if present
+    const urlMatch = outletText.match(/^([^(]+)\s*\(([^)]+)\)$/);
+    if (urlMatch) {
+      query.publication = urlMatch[1].trim();
+      if (urlMatch[2].startsWith('http')) {
+        query.outletUrl = urlMatch[2].trim();
+      }
+    } else {
+      query.publication = outletText;
     }
   }
 
