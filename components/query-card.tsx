@@ -61,28 +61,52 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
     setLoading(newStatus)
     const supabase = getSupabaseBrowserClient()
 
-    if (status === newStatus) {
-      // Remove status
-      await supabase.from("user_queries").delete().eq("user_id", userId).eq("query_id", query.id)
-      setStatus(null)
-    } else {
-      // Upsert status
-      await supabase.from("user_queries").upsert(
-        {
-          user_id: userId,
-          query_id: query.id,
-          status: newStatus,
-          responded_at: newStatus === "responded" ? new Date().toISOString() : null,
-        },
-        {
-          onConflict: "user_id,query_id",
-        },
-      )
-      setStatus(newStatus)
-    }
+    try {
+      if (status === newStatus) {
+        // Remove status
+        const { error } = await supabase
+          .from("user_queries")
+          .delete()
+          .eq("user_id", userId)
+          .eq("query_id", query.id)
 
-    setLoading(null)
-    router.refresh()
+        if (error) {
+          console.error('Error removing query status:', error)
+          throw error
+        }
+
+        setStatus(null)
+      } else {
+        // Upsert status
+        const { error } = await supabase
+          .from("user_queries")
+          .upsert(
+            {
+              user_id: userId,
+              query_id: query.id,
+              status: newStatus,
+              responded_at: newStatus === "responded" ? new Date().toISOString() : null,
+            },
+            {
+              onConflict: "user_id,query_id",
+            },
+          )
+
+        if (error) {
+          console.error('Error updating query status:', error)
+          throw error
+        }
+
+        setStatus(newStatus)
+      }
+
+      setLoading(null)
+      router.refresh()
+    } catch (error) {
+      console.error('Database operation failed:', error)
+      setLoading(null)
+      // You might want to show a toast notification here about the error
+    }
   }
 
   return (
