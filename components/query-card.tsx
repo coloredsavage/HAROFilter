@@ -41,6 +41,50 @@ interface QueryCardProps {
   userQuery?: UserQuery
 }
 
+// Clean text from encoding artifacts at display time
+function cleanDisplayText(text: string): string {
+  if (!text) return text;
+
+  return text
+    // Remove common encoding artifacts
+    .replace(/[âÂ]+/g, ' ')
+    .replace(/â€™/g, "'")
+    .replace(/â€œ/g, '"')
+    .replace(/â€\x9D/g, '"')
+    .replace(/â€"/g, '–')
+    .replace(/â€\x94/g, '—')
+    .replace(/â€¦/g, '...')
+    .replace(/Â/g, ' ')
+    // Fix common contractions with encoding issues
+    .replace(/weâ€™re/g, "we're")
+    .replace(/weâ€™ll/g, "we'll")
+    .replace(/youâ€™re/g, "you're")
+    .replace(/itâ€™s/g, "it's")
+    .replace(/donâ€™t/g, "don't")
+    .replace(/canâ€™t/g, "can't")
+    .replace(/wonâ€™t/g, "won't")
+    .replace(/isnâ€™t/g, "isn't")
+    .replace(/hasnâ€™t/g, "hasn't")
+    .replace(/havenâ€™t/g, "haven't")
+    .replace(/didnâ€™t/g, "didn't")
+    .replace(/wouldnâ€™t/g, "wouldn't")
+    .replace(/couldnâ€™t/g, "couldn't")
+    .replace(/shouldnâ€™t/g, "shouldn't")
+    // Legacy patterns
+    .replace(/weâÂôre/g, "we're")
+    .replace(/weâÂll/g, "we'll")
+    .replace(/youâÂre/g, "you're")
+    .replace(/itâÂs/g, "it's")
+    .replace(/donâÂt/g, "don't")
+    .replace(/canâÂt/g, "can't")
+    .replace(/wonâÂt/g, "won't")
+    // Remove any remaining invalid characters (keep normal punctuation and symbols)
+    .replace(/[^\w\s.,;:!?()\-'"\/\[\]{}@#$%&*+=<>|~`]/g, ' ')
+    // Clean up excessive whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
   const [status, setStatus] = useState(userQuery?.status || null)
   const [loading, setLoading] = useState<string | null>(null)
@@ -117,7 +161,7 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
             <div className="flex items-center gap-2 flex-wrap">
               {query.category && (
                 <Badge variant="secondary" className="text-xs shrink-0">
-                  {query.category}
+                  {cleanDisplayText(query.category)}
                 </Badge>
               )}
               {query.special_flags?.includes('no_ai') && (
@@ -133,16 +177,16 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
                 </Badge>
               )}
               {query.outlet && (
-                <span className="text-xs text-muted-foreground truncate max-w-[150px]">{query.outlet}</span>
+                <span className="text-xs text-muted-foreground truncate max-w-[150px]">{cleanDisplayText(query.outlet)}</span>
               )}
               {query.reporter_name && (
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <User className="h-3 w-3" />
-                  {query.reporter_name}
+                  {cleanDisplayText(query.reporter_name)}
                 </span>
               )}
             </div>
-            <h3 className="font-semibold leading-tight">{query.title}</h3>
+            <h3 className="font-semibold leading-tight">{cleanDisplayText(query.title)}</h3>
           </div>
 
           <Badge variant={getDeadlineBadgeVariant()} className="shrink-0 gap-1 self-start whitespace-nowrap">
@@ -166,7 +210,7 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
               <div className="flex flex-wrap gap-1">
                 {query.trigger_words.map((word, index) => (
                   <Badge key={index} variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
-                    {word}
+                    {cleanDisplayText(word)}
                   </Badge>
                 ))}
               </div>
@@ -174,7 +218,7 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground line-clamp-3">{query.summary}</p>
+        <p className="text-sm text-muted-foreground line-clamp-3">{cleanDisplayText(query.summary)}</p>
 
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
           <div className="flex items-center gap-2">
