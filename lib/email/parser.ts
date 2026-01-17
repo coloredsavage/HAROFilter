@@ -396,26 +396,16 @@ function parseQuerySection(
     query.fullText = cleanTextField(queryMatch[1].trim());
   }
 
-  // Look for additional description/requirements section
-  const descriptionMatch = cleanedSection.match(
-    /(?:Requirements?:|Description:)\s*([\s\S]+?)(?=\n\s*(?:Name:|Email:|Media Outlet:|Deadline:|$))/i
-  );
-  if (descriptionMatch) {
-    const description = cleanTextField(descriptionMatch[1].trim());
-    // Append to fullText if we have both
-    if (query.fullText && description && description !== query.fullText) {
-      query.fullText = `${query.fullText} ${description}`;
-    } else if (!query.fullText) {
-      query.fullText = description;
-    }
-  }
-
-  // Requirements
-  const requirementsMatch = cleanedSection.match(
-    /Requirements?:\s*([\s\S]+?)(?=\n\s*(?:Deadline:|Contact:|Query:|Back to Top|$))/i
-  );
+  // Description/Requirements - extract the detailed explanation (single line format)
+  const requirementsMatch = cleanedSection.match(/Requirements?:\s*([^]+?)$/i);
   if (requirementsMatch) {
-    query.requirements = cleanTextField(requirementsMatch[1].trim());
+    const description = cleanTextField(requirementsMatch[1].trim());
+    query.requirements = description;
+
+    // Also set as fullText if it's more detailed than the headline
+    if (description.length > (query.fullText?.length || 0)) {
+      query.fullText = `${query.headline} - ${description}`;
+    }
   }
 
   // Deadline (single line)
