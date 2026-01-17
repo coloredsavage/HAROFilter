@@ -245,4 +245,4 @@ Contributions are welcome! Please read our [Contributing Guidelines](./CONTRIBUT
 
 ---
 
-**Built with ❤️ by the HAROFilter team**
+**Built with ❤️ by Savage x Claude
