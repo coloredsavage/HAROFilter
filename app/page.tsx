@@ -194,44 +194,37 @@ export default function LandingPage() {
           </div>
 
           <div className="bg-muted/50 rounded-lg p-8">
-            <h3 className="text-2xl font-bold text-center mb-6">The SEO Benefits Are Real</h3>
-            <div className="grid md:grid-cols-2 gap-8 items-center">
+            <h3 className="text-2xl font-bold text-center mb-6">Build Your Credibility and Reach</h3>
+            <div className="grid md:grid-cols-1 gap-8">
               <div>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   <li className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Get high-authority backlinks from major publications</span>
+                    <span>Get featured in major publications and media outlets</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Boost your domain authority and search rankings</span>
+                    <span>Establish yourself as an industry thought leader</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Increase organic traffic to your website</span>
+                    <span>Create valuable relationships with journalists and editors</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Build relationships with journalists and editors</span>
+                    <span>Boost your visibility and organic discoverability (plus earn high-authority backlinks)</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Establish thought leadership in your industry</span>
+                    <span>Expand your professional network and opportunities</span>
                   </li>
                 </ul>
               </div>
-              <div className="text-center">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-3xl font-bold text-primary">1000+</div>
-                    <div className="text-sm text-muted-foreground">Monthly HARO requests</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-primary">95%</div>
-                    <div className="text-sm text-muted-foreground">Of which you could miss without filtering</div>
-                  </div>
-                </div>
-              </div>
+            </div>
+            <div className="mt-8 pt-6 border-t border-border">
+              <p className="text-center text-muted-foreground">
+                <span className="font-semibold text-primary">1,000+</span> monthly HARO opportunities | <span className="font-semibold text-primary">95%</span> require filtering to find relevant matches
+              </p>
             </div>
           </div>
         </div>
