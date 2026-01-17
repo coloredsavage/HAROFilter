@@ -157,7 +157,7 @@ npm install
    GOOGLE_REDIRECT_URL=http://localhost:3000/api/gmail/auth
 
    # Gmail account for receiving HARO emails
-   GMAIL_USER=untttld@gmail.com
+   GMAIL_USER=your-email@gmail.com
 
    # Generate a random secret
    CRON_SECRET=$(openssl rand -base64 32)
@@ -180,7 +180,7 @@ npm install
 
 3. Follow the instructions:
    - Visit the authorization URL in your browser
-   - Sign in with `untttld@gmail.com`
+   - Sign in with your Gmail account
    - Grant permissions
    - Copy the authorization code from the redirect URL
    - Paste it into the terminal
@@ -191,7 +191,7 @@ npm install
 
 ### 6. Set Up Gmail App Password (For SMTP)
 
-1. Enable 2-Factor Authentication on `untttld@gmail.com`:
+1. Enable 2-Factor Authentication on your Gmail account:
    - Go to [Google Account Security](https://myaccount.google.com/security)
    - Enable 2-Step Verification
 
@@ -209,7 +209,7 @@ npm install
 ### 7. Subscribe to HARO
 
 1. Go to [helpareporter.com](https://www.helpareporter.com)
-2. Sign up with `untttld@gmail.com`
+2. Sign up with your Gmail address
 3. Select ALL categories (Business, Tech, Lifestyle, etc.)
 4. Confirm email subscription
 5. HARO will send 3 emails per day (morning, noon, evening EST)
@@ -314,7 +314,7 @@ Vercel will automatically deploy and enable cron jobs.
 ```
 HARO Email (3x/day)
     ↓
-untttld@gmail.com (Gmail inbox)
+your-email@gmail.com (Gmail inbox)
     ↓
 Vercel Cron (every hour) → /api/cron/poll-gmail
     ↓
@@ -385,7 +385,7 @@ User Dashboard Updates
 3. **Configure .env.local** with all required variables
 4. **Run Gmail Authentication** (npm run gmail-auth)
 5. **Set Up Gmail App Password** for SMTP
-6. **Subscribe to HARO** with untttld@gmail.com
+6. **Subscribe to HARO** with your Gmail address
 7. **Test Everything** (npm run test-gmail, npm run test-parser)
 8. **Deploy to Vercel** and verify cron jobs are running
 

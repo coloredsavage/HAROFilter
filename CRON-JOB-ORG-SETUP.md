@@ -191,7 +191,7 @@ LIMIT 20;
 **Problem:** Gmail polling runs but finds no emails
 
 **Solution:**
-- Verify HARO subscription is active for untttld@gmail.com
+- Verify HARO subscription is active for your Gmail address
 - Check that Gmail API credentials are valid
 - Ensure GMAIL_REFRESH_TOKEN is set correctly
 - Run `npm run test-gmail` locally to verify Gmail API connection

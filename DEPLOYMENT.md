@@ -256,7 +256,7 @@ openssl rand -base64 32
    - Verify keywords saved in database (check Supabase)
 
 3. **Gmail polling (manual test):**
-   - Send test HARO email to `untttld@gmail.com`
+   - Send test HARO email to your Gmail address
    - Trigger manual cron job execution in cron-job.org
    - OR wait for next hourly execution
    - Check Vercel logs for execution
