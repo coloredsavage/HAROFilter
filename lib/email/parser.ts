@@ -369,7 +369,7 @@ function validateQuery(raw: RawHaroQuery): HaroQuery | null {
 
   return {
     headline: raw.headline,
-    fullText: raw.fullText,
+    fullText: raw.fullText || raw.headline || '',
     requirements: raw.requirements || '',
     deadline: deadlineDate,
     journalistEmail: raw.journalistEmail || null,
