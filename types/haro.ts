@@ -12,6 +12,18 @@ export interface HaroQuery {
   publication: string;
   category: string;
   haroEmailId: string;
+  // New fields from database schema update
+  reporterName: string | null;
+  outletUrl: string | null;
+  haroQueryNumber: number | null;
+  haroEdition: string | null;
+  specialFlags: string[];
+  isDirectEmail: boolean;
+  hasAiDetection: boolean;
+  triggerWords: string[];
+  decodedInstructions: string | null;
+  extractedUrls: string[];
+  haroArticleUrl: string | null;
 }
 
 /**
@@ -26,6 +38,18 @@ export interface RawHaroQuery {
   publication?: string;
   category?: string;
   haroEmailId?: string;
+  // New fields from database schema update
+  reporterName?: string | null;
+  outletUrl?: string | null;
+  haroQueryNumber?: number | null;
+  haroEdition?: string | null;
+  specialFlags?: string[];
+  isDirectEmail?: boolean;
+  hasAiDetection?: boolean;
+  triggerWords?: string[];
+  decodedInstructions?: string | null;
+  extractedUrls?: string[];
+  haroArticleUrl?: string | null;
 }
 
 /**

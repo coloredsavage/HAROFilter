@@ -25,7 +25,12 @@ export default async function DashboardPage() {
 
   const { data: allQueries, error: queriesError } = await supabase
     .from("queries")
-    .select("id, publication, headline, full_text, requirements, journalist_contact, deadline, posted_at")
+    .select(`
+      id, publication, headline, full_text, requirements, journalist_contact, deadline, posted_at,
+      reporter_name, outlet_url, haro_query_number, haro_edition, special_flags,
+      is_direct_email, has_ai_detection, trigger_words, decoded_instructions,
+      extracted_urls, haro_article_url
+    `)
     .order("deadline", { ascending: true })
 
   console.log("[v0] Dashboard - Sample query:", allQueries?.[0])
@@ -49,6 +54,17 @@ export default async function DashboardPage() {
         deadline: query.deadline,
         reporter_email: query.journalist_contact,
         created_at: query.posted_at,
+        // New fields
+        reporter_name: query.reporter_name,
+        outlet_url: query.outlet_url,
+        haro_query_number: query.haro_query_number,
+        special_flags: query.special_flags || [],
+        is_direct_email: query.is_direct_email,
+        has_ai_detection: query.has_ai_detection,
+        trigger_words: query.trigger_words || [],
+        decoded_instructions: query.decoded_instructions,
+        extracted_urls: query.extracted_urls || [],
+        haro_article_url: query.haro_article_url,
       })) || []
 
   console.log("[v0] Dashboard - Matching queries:", matchingQueries.length)

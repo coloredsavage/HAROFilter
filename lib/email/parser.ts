@@ -1,6 +1,116 @@
 import { HaroQuery, ParsedEmail, RawHaroQuery } from '@/types/haro';
 
 /**
+ * Anti-AI Detection System
+ */
+interface AiDetectionResult {
+  hasAiDetection: boolean;
+  triggerWords: string[];
+  decodedInstructions: string | null;
+  cleanedText: string;
+}
+
+/**
+ * Detect and decode anti-AI instructions hidden in text
+ */
+function detectAntiAiInstructions(text: string): AiDetectionResult {
+  const result: AiDetectionResult = {
+    hasAiDetection: false,
+    triggerWords: [],
+    decodedInstructions: null,
+    cleanedText: text
+  };
+
+  // Look for base64 encoded strings (50+ chars, ends with =)
+  const base64Regex = /[A-Za-z0-9+/]{50,}=*/g;
+  const base64Matches = text.match(base64Regex);
+
+  // Look for hex encoded strings (50+ chars, only hex digits)
+  const hexRegex = /[0-9a-fA-F]{50,}/g;
+  const hexMatches = text.match(hexRegex);
+
+  let cleanedText = text;
+
+  // Process base64 strings
+  if (base64Matches) {
+    for (const match of base64Matches) {
+      try {
+        const decoded = atob(match);
+        if (decoded.toLowerCase().includes('ai') && decoded.toLowerCase().includes('word')) {
+          result.hasAiDetection = true;
+          result.decodedInstructions = decoded;
+          // Extract trigger words from instructions
+          const wordMatches = decoded.match(/"([^"]+)"|'([^']+)'|word\s+(\w+)/gi);
+          if (wordMatches) {
+            result.triggerWords.push(...wordMatches.map(w => w.replace(/["']/g, '').replace(/word\s+/i, '')));
+          }
+          cleanedText = cleanedText.replace(match, '');
+        }
+      } catch {
+        // Not valid base64, skip
+      }
+    }
+  }
+
+  // Process hex strings
+  if (hexMatches) {
+    for (const match of hexMatches) {
+      try {
+        const decoded = Buffer.from(match, 'hex').toString('utf8');
+        if (decoded.toLowerCase().includes('ai') && decoded.toLowerCase().includes('word')) {
+          result.hasAiDetection = true;
+          result.decodedInstructions = decoded;
+          // Extract trigger words from instructions
+          const wordMatches = decoded.match(/"([^"]+)"|'([^']+)'|word\s+(\w+)/gi);
+          if (wordMatches) {
+            result.triggerWords.push(...wordMatches.map(w => w.replace(/["']/g, '').replace(/word\s+/i, '')));
+          }
+          cleanedText = cleanedText.replace(match, '');
+        }
+      } catch {
+        // Not valid hex, skip
+      }
+    }
+  }
+
+  result.cleanedText = cleanedText.trim();
+  return result;
+}
+
+/**
+ * Extract and categorize URLs from query text
+ */
+function extractUrls(text: string): { extractedUrls: string[], haroArticleUrl: string | null } {
+  const urlRegex = /https?:\/\/[^\s<>"{}|\\^`\[\]]+/g;
+  const urls = text.match(urlRegex) || [];
+
+  // Clean and deduplicate URLs
+  const cleanUrls = [...new Set(urls.map(url => {
+    // Remove trailing punctuation that's likely not part of the URL
+    return url.replace(/[.,;:!?)\]}]+$/, '');
+  }))];
+
+  // Try to identify HARO article/reference URLs
+  let haroArticleUrl = null;
+  const potentialHaroUrls = cleanUrls.filter(url =>
+    url.includes('helpareporter.com') ||
+    url.includes('haro') ||
+    url.includes('journalist') ||
+    // Common article patterns
+    (url.includes('article') || url.includes('story') || url.includes('news'))
+  );
+
+  if (potentialHaroUrls.length > 0) {
+    haroArticleUrl = potentialHaroUrls[0]; // Take the first one
+  }
+
+  return {
+    extractedUrls: cleanUrls,
+    haroArticleUrl
+  };
+}
+
+/**
  * Parse a HARO email and extract individual queries
  */
 export function parseHaroEmail(
@@ -90,59 +200,96 @@ function splitIntoQueries(body: string): string[] {
 }
 
 /**
- * Parse a single query section
+ * Parse a single query section with enhanced field extraction
  */
 function parseQuerySection(
   section: string,
   emailId: string,
-  category: string
+  category: string,
+  queryNumber?: number,
+  edition?: string
 ): RawHaroQuery {
+  // Detect anti-AI instructions first
+  const aiDetection = detectAntiAiInstructions(section);
+
   const query: RawHaroQuery = {
     haroEmailId: emailId,
     category,
+    haroQueryNumber: queryNumber || null,
+    haroEdition: edition || null,
+    hasAiDetection: aiDetection.hasAiDetection,
+    triggerWords: aiDetection.triggerWords,
+    decodedInstructions: aiDetection.decodedInstructions,
+    specialFlags: [],
+    isDirectEmail: false,
   };
 
+  // Use cleaned text for further parsing
+  const cleanedSection = aiDetection.cleanedText;
+
+  // Extract reporter name from "Name: Reporter Name" pattern
+  const nameMatch = cleanedSection.match(/Name:\s*([^\n]+)/i);
+  if (nameMatch) query.reporterName = nameMatch[1].trim();
+
+  // Extract query number from section (e.g., "1) Summary:" or "Query #5")
+  if (!query.haroQueryNumber) {
+    const numberMatch = cleanedSection.match(/(?:^|\n)(\d+)\)\s*Summary:|Query\s*#?(\d+)/i);
+    if (numberMatch) query.haroQueryNumber = parseInt(numberMatch[1] || numberMatch[2]);
+  }
+
   // Query / Headline
-  const queryMatch = section.match(
-    /Query:\s*([\s\S]+?)(?=\n|Summary:|Requirements:|$)/i
+  const queryMatch = cleanedSection.match(
+    /(?:Query:|Summary:)\s*([\s\S]+?)(?=\n(?:Name:|Category:|Email:|Media Outlet:|Deadline:)|$)/i
   );
   if (queryMatch) query.headline = queryMatch[1].trim();
 
-  // Summary
-  const summaryMatch = section.match(
-    /Summary:\s*([\s\S]+?)(?=\n\s*Requirements:|Deadline:|Contact:|Query:|$)/i
+  // Full text (longer description)
+  const fullTextMatch = cleanedSection.match(
+    /Query:\s*([\s\S]+?)(?=\n\s*(?:Requirements?:|Back to Top|------|$))/i
   );
-  if (summaryMatch) query.fullText = summaryMatch[1].trim();
+  if (fullTextMatch) query.fullText = fullTextMatch[1].trim();
 
   // Requirements
-  const requirementsMatch = section.match(
-    /Requirements?:\s*([\s\S]+?)(?=\n\s*Deadline:|Contact:|Query:|$)/i
+  const requirementsMatch = cleanedSection.match(
+    /Requirements?:\s*([\s\S]+?)(?=\n\s*(?:Deadline:|Contact:|Query:|Back to Top|$))/i
   );
   if (requirementsMatch) query.requirements = requirementsMatch[1].trim();
 
   // Deadline
-  const deadlineMatch = section.match(
-    /Deadline:\s*([\s\S]+?)(?=\n\s*Contact:|Query:|$)/i
+  const deadlineMatch = cleanedSection.match(
+    /Deadline:\s*([\s\S]+?)(?=\n\s*(?:Contact:|Query:|Back to Top|$))/i
   );
   if (deadlineMatch) query.deadline = deadlineMatch[1].trim();
 
-  // Contact email
-  const contactMatch = section.match(
-    /Contact:\s*([\s\S]+?)(?=\n|Query:|$)/i
-  );
-  if (contactMatch) {
-    const contact = contactMatch[1].trim();
-    query.journalistEmail =
-      contact && contact.includes('@') && contact.toLowerCase() !== 'not provided'
-        ? contact
-        : null;
+  // Contact email - detect if it's HARO reply email or direct
+  const emailMatch = cleanedSection.match(/Email:\s*([^\n]+)/i);
+  if (emailMatch) {
+    const email = emailMatch[1].trim();
+    query.journalistEmail = email && email.includes('@') ? email : null;
+    query.isDirectEmail = !email.includes('helpareporter.com');
   }
 
-  // Publication
-  const publicationMatch = section.match(
-    /(?:for|writing for|published in|outlet:\s*)([A-Z][A-Za-z\s&]+?)(?:\.|,|\n|$)/
-  );
-  query.publication = publicationMatch?.[1]?.trim() ?? 'Unknown Publication';
+  // Media outlet name and URL
+  const outletMatch = cleanedSection.match(/Media Outlet:\s*([^(]+)(?:\s*\(([^)]+)\))?/i);
+  if (outletMatch) {
+    query.publication = outletMatch[1].trim();
+    if (outletMatch[2] && outletMatch[2].startsWith('http')) {
+      query.outletUrl = outletMatch[2].trim();
+    }
+  }
+
+  // Special flags detection
+  const flags = [];
+  if (cleanedSection.toLowerCase().includes('no ai pitches')) flags.push('no_ai');
+  if (cleanedSection.toLowerCase().includes('urgent')) flags.push('urgent');
+  if (cleanedSection.toLowerCase().includes('paid')) flags.push('paid');
+  if (cleanedSection.toLowerCase().includes('exclusive')) flags.push('exclusive');
+  query.specialFlags = flags;
+
+  // Extract URLs from the entire section
+  const urlExtraction = extractUrls(section); // Use original section to catch all URLs
+  query.extractedUrls = urlExtraction.extractedUrls;
+  query.haroArticleUrl = urlExtraction.haroArticleUrl;
 
   return query;
 }
@@ -170,6 +317,18 @@ function validateQuery(raw: RawHaroQuery): HaroQuery | null {
     publication: raw.publication || 'Unknown Publication',
     category: raw.category || 'General',
     haroEmailId: raw.haroEmailId || '',
+    // New fields
+    reporterName: raw.reporterName || null,
+    outletUrl: raw.outletUrl || null,
+    haroQueryNumber: raw.haroQueryNumber || null,
+    haroEdition: raw.haroEdition || null,
+    specialFlags: raw.specialFlags || [],
+    isDirectEmail: raw.isDirectEmail || false,
+    hasAiDetection: raw.hasAiDetection || false,
+    triggerWords: raw.triggerWords || [],
+    decodedInstructions: raw.decodedInstructions || null,
+    extractedUrls: raw.extractedUrls || [],
+    haroArticleUrl: raw.haroArticleUrl || null,
   };
 }
 

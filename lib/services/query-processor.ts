@@ -140,7 +140,7 @@ async function insertQueries(parsedEmail: ParsedEmail) {
   const supabase = await getSupabaseServerClient();
 
   try {
-    // Prepare query records
+    // Prepare query records with new fields
     const queryRecords = parsedEmail.queries.map((query) => ({
       headline: query.headline,
       full_text: query.fullText,
@@ -152,6 +152,18 @@ async function insertQueries(parsedEmail: ParsedEmail) {
       haro_email_id: query.haroEmailId,
       haro_category: parsedEmail.category,
       source_email_received_at: parsedEmail.receivedAt.toISOString(),
+      // New fields from schema update
+      reporter_name: query.reporterName,
+      outlet_url: query.outletUrl,
+      haro_query_number: query.haroQueryNumber,
+      haro_edition: query.haroEdition,
+      special_flags: query.specialFlags,
+      is_direct_email: query.isDirectEmail,
+      has_ai_detection: query.hasAiDetection,
+      trigger_words: query.triggerWords,
+      decoded_instructions: query.decodedInstructions,
+      extracted_urls: query.extractedUrls,
+      haro_article_url: query.haroArticleUrl,
     }));
 
     // Batch insert queries

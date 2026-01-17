@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Filter, Settings, LogOut, User } from "lucide-react"
+import { Filter, Settings, LogOut, User, Github } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
 interface DashboardHeaderProps {
@@ -46,6 +46,11 @@ export function DashboardHeader({ userName }: DashboardHeaderProps) {
         </Link>
 
         <div className="flex items-center gap-4">
+          <Link href="https://github.com/coloredsavage/HAROFilter" target="_blank" rel="noopener noreferrer">
+            <Button variant="ghost" size="icon">
+              <Github className="h-4 w-4" />
+            </Button>
+          </Link>
           <Link href="/settings/keywords">
             <Button variant="ghost" size="sm">
               <Settings className="h-4 w-4 mr-2" />

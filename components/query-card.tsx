@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { Bookmark, CheckCircle2, Clock, ExternalLink, Mail, Loader2 } from "lucide-react"
+import { Bookmark, CheckCircle2, Clock, ExternalLink, Mail, Loader2, AlertTriangle, Shield, User, Globe } from "lucide-react"
 import { formatDistanceToNow, isPast, differenceInDays } from "date-fns"
 
 interface Query {
@@ -18,6 +18,15 @@ interface Query {
   deadline: string
   reporter_email: string | null
   created_at: string
+  // New fields from schema update
+  reporter_name?: string | null
+  outlet_url?: string | null
+  haro_query_number?: number | null
+  special_flags?: string[]
+  is_direct_email?: boolean
+  has_ai_detection?: boolean
+  trigger_words?: string[]
+  decoded_instructions?: string | null
 }
 
 interface UserQuery {
@@ -87,8 +96,26 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
                   {query.category}
                 </Badge>
               )}
+              {query.special_flags?.includes('no_ai') && (
+                <Badge variant="destructive" className="text-xs shrink-0 gap-1">
+                  <Shield className="h-3 w-3" />
+                  No AI
+                </Badge>
+              )}
+              {query.is_direct_email && (
+                <Badge variant="default" className="text-xs shrink-0 gap-1">
+                  <Mail className="h-3 w-3" />
+                  Direct
+                </Badge>
+              )}
               {query.outlet && (
                 <span className="text-xs text-muted-foreground truncate max-w-[150px]">{query.outlet}</span>
+              )}
+              {query.reporter_name && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  {query.reporter_name}
+                </span>
               )}
             </div>
             <h3 className="font-semibold leading-tight">{query.title}</h3>
@@ -102,6 +129,27 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {query.has_ai_detection && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+              <span className="text-sm font-medium text-yellow-800">AI Detection Warning</span>
+            </div>
+            <p className="text-sm text-yellow-700">
+              This query contains hidden anti-AI instructions. Avoid using these trigger words:
+            </p>
+            {query.trigger_words && query.trigger_words.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {query.trigger_words.map((word, index) => (
+                  <Badge key={index} variant="outline" className="text-xs bg-yellow-100 border-yellow-300">
+                    {word}
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <p className="text-sm text-muted-foreground line-clamp-3">{query.summary}</p>
 
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
@@ -135,15 +183,26 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
             </Button>
           </div>
 
-          {query.reporter_email && (
-            <Button variant="ghost" size="sm" asChild>
-              <a href={`mailto:${query.reporter_email}`}>
-                <Mail className="h-4 w-4 mr-1" />
-                Pitch
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </a>
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {query.outlet_url && (
+              <Button variant="ghost" size="sm" asChild>
+                <a href={query.outlet_url} target="_blank" rel="noopener noreferrer">
+                  <Globe className="h-4 w-4 mr-1" />
+                  Outlet
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </a>
+              </Button>
+            )}
+            {query.reporter_email && (
+              <Button variant="ghost" size="sm" asChild>
+                <a href={`mailto:${query.reporter_email}`}>
+                  <Mail className="h-4 w-4 mr-1" />
+                  Pitch
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Filter, MessageSquare, ArrowRight, CheckCircle2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Search, Filter, MessageSquare, ArrowRight, CheckCircle2, Github, ExternalLink, TrendingUp, Shield, Clock, Twitter } from "lucide-react"
 import { SignUpForm } from "@/components/signup-form"
 
 export default function LandingPage() {
@@ -17,6 +18,11 @@ export default function LandingPage() {
             <span className="font-semibold text-lg">HAROFilter</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="https://github.com/coloredsavage/HAROFilter" target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="icon">
+                <Github className="h-4 w-4" />
+              </Button>
+            </Link>
             <Link href="/login">
               <Button variant="ghost">Log In</Button>
             </Link>
@@ -32,6 +38,15 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Link href="https://github.com/coloredsavage/HAROFilter" target="_blank" rel="noopener noreferrer">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <Github className="h-4 w-4" />
+                    <span>Star on GitHub</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </div>
+                </Link>
+              </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-balance">
                 HARO Queries, Filtered for You
               </h1>
@@ -129,8 +144,106 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Why HARO Matters */}
       <section className="py-20 px-4">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Why HARO Matters for Your Business</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              HARO connects you with journalists from major publications. Build authority, earn high-quality backlinks, and boost your SEO rankings.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <Card className="text-center">
+              <CardHeader>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>High-Quality Backlinks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Get featured in Forbes, TechCrunch, and other authoritative sites. Earn powerful backlinks that boost your SEO rankings.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Build Authority</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Establish yourself as an industry expert. Build your personal brand and credibility through media coverage.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Clock className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Save Time</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Precision matching means you only see opportunities that fit your expertise. No more sifting through irrelevant requests.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="bg-muted/50 rounded-lg p-8">
+            <h3 className="text-2xl font-bold text-center mb-6">The SEO Benefits Are Real</h3>
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>Get high-authority backlinks from major publications</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>Boost your domain authority and search rankings</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>Increase organic traffic to your website</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>Build relationships with journalists and editors</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span>Establish thought leadership in your industry</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="text-center">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-3xl font-bold text-primary">1000+</div>
+                    <div className="text-sm text-muted-foreground">Monthly HARO requests</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold text-primary">95%</div>
+                    <div className="text-sm text-muted-foreground">Of which you could miss without filtering</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-20 px-4 bg-muted/50">
         <div className="mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
@@ -226,11 +339,25 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-border">
         <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
-              <Filter className="h-3 w-3 text-primary-foreground" />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
+                <Filter className="h-3 w-3 text-primary-foreground" />
+              </div>
+              <span className="font-medium">HAROFilter</span>
             </div>
-            <span className="font-medium">HAROFilter</span>
+            <div className="flex items-center gap-3">
+              <Link href="https://github.com/coloredsavage/HAROFilter" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Github className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="https://x.com/colored_savage" target="_blank" rel="noopener noreferrer">
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Twitter className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
           <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} HAROFilter. All rights reserved.</p>
         </div>
