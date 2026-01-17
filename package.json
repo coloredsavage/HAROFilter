@@ -10,7 +10,8 @@
     "test-parser": "tsx scripts/test-parser.ts",
     "gmail-auth": "tsx scripts/gmail-auth.ts",
     "gmail-auth-desktop": "tsx scripts/gmail-auth-desktop.ts",
-    "test-gmail": "tsx scripts/test-gmail.ts"
+    "test-gmail": "tsx scripts/test-gmail.ts",
+    "process-forwarded": "tsx scripts/process-forwarded-emails.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
