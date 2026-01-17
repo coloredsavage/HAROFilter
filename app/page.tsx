@@ -1,103 +1,240 @@
-import Image from "next/image";
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Search, Filter, MessageSquare, ArrowRight, CheckCircle2 } from "lucide-react"
+import { SignUpForm } from "@/components/signup-form"
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="border-b border-border">
+        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <Filter className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <span className="font-semibold text-lg">HAROFilter</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/login">
+              <Button variant="ghost">Log In</Button>
+            </Link>
+            <Link href="/signup">
+              <Button>Get Started</Button>
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-balance">
+                HARO Queries, Filtered for You
+              </h1>
+              <p className="text-xl text-muted-foreground text-pretty">
+                Set your keywords. Check your dashboard. Respond to relevant queries.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/signup">
+                  <Button size="lg" className="w-full sm:w-auto">
+                    Start Free
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Signup Form Card */}
+            <Card className="shadow-lg">
+              <CardHeader>
+                <CardTitle>Create your account</CardTitle>
+                <CardDescription>Start filtering HARO queries in minutes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SignUpForm redirectTo="/onboarding" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* How it Works */}
+      <section className="py-20 px-4 bg-muted/50">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Stop wasting time scrolling through irrelevant queries. Let us filter them for you.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="relative">
+              <div className="absolute -top-4 left-6 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                1
+              </div>
+              <CardHeader className="pt-8">
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Search className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Set Your Keywords</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Tell us your areas of expertise. Add keywords like "marketing", "SaaS", "healthcare", or any topic you
+                  can speak to.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="relative">
+              <div className="absolute -top-4 left-6 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                2
+              </div>
+              <CardHeader className="pt-8">
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <Filter className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>We Filter Queries</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Our system automatically matches incoming HARO queries to your keywords and surfaces only the relevant
+                  ones.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="relative">
+              <div className="absolute -top-4 left-6 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                3
+              </div>
+              <CardHeader className="pt-8">
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <MessageSquare className="h-6 w-6 text-primary" />
+                </div>
+                <CardTitle>Respond to Matches</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Check your dashboard, see matching queries with deadlines, and respond directly to journalists.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-20 px-4">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h2 className="text-3xl font-bold">Everything you need to land media coverage</h2>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Smart Keyword Matching</p>
+                    <p className="text-muted-foreground text-sm">Queries are matched to your expertise automatically</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Deadline Tracking</p>
+                    <p className="text-muted-foreground text-sm">Never miss a deadline with clear visual indicators</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Response Tracking</p>
+                    <p className="text-muted-foreground text-sm">Keep track of which queries you've responded to</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Save for Later</p>
+                    <p className="text-muted-foreground text-sm">
+                      Bookmark interesting queries to respond when you're ready
+                    </p>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Preview Card */}
+            <Card className="shadow-lg overflow-hidden">
+              <div className="bg-muted/50 p-4 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-red-400" />
+                  <div className="h-3 w-3 rounded-full bg-yellow-400" />
+                  <div className="h-3 w-3 rounded-full bg-green-400" />
+                </div>
+              </div>
+              <CardContent className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded">Marketing</span>
+                    <span className="text-xs text-muted-foreground">Deadline: 2 days</span>
+                  </div>
+                  <h3 className="font-semibold">Expert Quotes on AI Marketing Trends</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Looking for marketing professionals to share insights on how AI is changing digital marketing
+                    strategies...
+                  </p>
+                </div>
+                <div className="h-px bg-border" />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium bg-primary/10 text-primary px-2 py-1 rounded">SaaS</span>
+                    <span className="text-xs text-muted-foreground">Deadline: 5 days</span>
+                  </div>
+                  <h3 className="font-semibold">SaaS Founders Share Growth Strategies</h3>
+                  <p className="text-sm text-muted-foreground">
+                    We're writing about bootstrapped SaaS companies that have achieved significant growth...
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 bg-primary text-primary-foreground">
+        <div className="mx-auto max-w-3xl text-center space-y-6">
+          <h2 className="text-3xl font-bold">Ready to get more media coverage?</h2>
+          <p className="text-primary-foreground/80 text-lg">
+            Join thousands of experts who use HAROFilter to find and respond to relevant journalist queries.
+          </p>
+          <Link href="/signup">
+            <Button size="lg" variant="secondary">
+              Start Free Today
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 px-4 border-t border-border">
+        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
+              <Filter className="h-3 w-3 text-primary-foreground" />
+            </div>
+            <span className="font-medium">HAROFilter</span>
+          </div>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} HAROFilter. All rights reserved.</p>
+        </div>
       </footer>
     </div>
-  );
+  )
 }

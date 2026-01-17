@@ -1,0 +1,151 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { Bookmark, CheckCircle2, Clock, ExternalLink, Mail, Loader2 } from "lucide-react"
+import { formatDistanceToNow, isPast, differenceInDays } from "date-fns"
+
+interface Query {
+  id: string
+  title: string
+  summary: string
+  outlet: string | null
+  category: string | null
+  deadline: string
+  reporter_email: string | null
+  created_at: string
+}
+
+interface UserQuery {
+  query_id: string
+  status: string
+  responded_at: string | null
+}
+
+interface QueryCardProps {
+  query: Query
+  userId: string
+  userQuery?: UserQuery
+}
+
+export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
+  const [status, setStatus] = useState(userQuery?.status || null)
+  const [loading, setLoading] = useState<string | null>(null)
+  const router = useRouter()
+
+  const deadline = new Date(query.deadline)
+  const isExpired = isPast(deadline)
+  const daysUntil = differenceInDays(deadline, new Date())
+
+  function getDeadlineBadgeVariant() {
+    if (isExpired) return "destructive"
+    if (daysUntil <= 1) return "destructive"
+    if (daysUntil <= 3) return "secondary"
+    return "outline"
+  }
+
+  async function handleStatusChange(newStatus: "saved" | "responded") {
+    setLoading(newStatus)
+    const supabase = getSupabaseBrowserClient()
+
+    if (status === newStatus) {
+      // Remove status
+      await supabase.from("user_queries").delete().eq("user_id", userId).eq("query_id", query.id)
+      setStatus(null)
+    } else {
+      // Upsert status
+      await supabase.from("user_queries").upsert(
+        {
+          user_id: userId,
+          query_id: query.id,
+          status: newStatus,
+          responded_at: newStatus === "responded" ? new Date().toISOString() : null,
+        },
+        {
+          onConflict: "user_id,query_id",
+        },
+      )
+      setStatus(newStatus)
+    }
+
+    setLoading(null)
+    router.refresh()
+  }
+
+  return (
+    <Card className={isExpired ? "opacity-60" : ""}>
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+          <div className="space-y-1 flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              {query.category && (
+                <Badge variant="secondary" className="text-xs shrink-0">
+                  {query.category}
+                </Badge>
+              )}
+              {query.outlet && (
+                <span className="text-xs text-muted-foreground truncate max-w-[150px]">{query.outlet}</span>
+              )}
+            </div>
+            <h3 className="font-semibold leading-tight">{query.title}</h3>
+          </div>
+
+          <Badge variant={getDeadlineBadgeVariant()} className="shrink-0 gap-1 self-start whitespace-nowrap">
+            <Clock className="h-3 w-3" />
+            {isExpired ? "Expired" : `${formatDistanceToNow(deadline)} left`}
+          </Badge>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground line-clamp-3">{query.summary}</p>
+
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={status === "saved" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleStatusChange("saved")}
+              disabled={loading !== null}
+            >
+              {loading === "saved" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Bookmark className={`h-4 w-4 ${status === "saved" ? "fill-current" : ""}`} />
+              )}
+              <span className="ml-1">Save</span>
+            </Button>
+
+            <Button
+              variant={status === "responded" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleStatusChange("responded")}
+              disabled={loading !== null}
+            >
+              {loading === "responded" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className={`h-4 w-4 ${status === "responded" ? "fill-current" : ""}`} />
+              )}
+              <span className="ml-1">Responded</span>
+            </Button>
+          </div>
+
+          {query.reporter_email && (
+            <Button variant="ghost" size="sm" asChild>
+              <a href={`mailto:${query.reporter_email}`}>
+                <Mail className="h-4 w-4 mr-1" />
+                Pitch
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </a>
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
