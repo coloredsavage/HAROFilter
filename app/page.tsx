@@ -139,13 +139,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Why HARO Matters */}
+      {/* Why HARO Works */}
       <section className="py-20 px-4">
         <div className="mx-auto max-w-6xl">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Why HARO Matters for Your Business</h2>
+            <h2 className="text-3xl font-bold mb-4">Why HARO Works</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              HARO connects you with journalists from major publications. Build authority, earn high-quality backlinks, and boost your SEO rankings.
+              Connect with journalists from top-tier publications. Build real authority, expand your visibility, and establish credibility, with the added benefit of quality backlinks.
             </p>
           </div>
 
@@ -155,11 +155,11 @@ export default function LandingPage() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <TrendingUp className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>High-Quality Backlinks</CardTitle>
+                <CardTitle>Get Featured Where It Matters</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Get featured in Forbes, TechCrunch, and other authoritative sites. Earn powerful backlinks that boost your SEO rankings.
+                  Land coverage in Forbes, TechCrunch, and other influential outlets. The kind of visibility that builds trust and opens doors (and yes, helps your SEO too).
                 </p>
               </CardContent>
             </Card>
@@ -169,11 +169,11 @@ export default function LandingPage() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <Shield className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Build Authority</CardTitle>
+                <CardTitle>Establish Your Expertise</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Establish yourself as an industry expert. Build your personal brand and credibility through media coverage.
+                  Become the go-to voice in your industry. Strategic media coverage strengthens your brand and positions you as a leader.
                 </p>
               </CardContent>
             </Card>
@@ -183,11 +183,11 @@ export default function LandingPage() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <Clock className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Save Time</CardTitle>
+                <CardTitle>Stop Wasting Time</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Precision matching means you only see opportunities that fit your expertise. No more sifting through irrelevant requests.
+                  See only opportunities that match your expertise. Smart filtering cuts through the noise so you can focus on what matters.
                 </p>
               </CardContent>
             </Card>
