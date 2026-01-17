@@ -73,8 +73,42 @@ function detectAntiAiInstructions(text: string): AiDetectionResult {
     }
   }
 
+  // Additional cleaning for encoding artifacts and garbage characters
+  cleanedText = cleanedText
+    // Remove common encoding artifacts
+    .replace(/[âÂ]+/g, ' ')
+    .replace(/[^\w\s.,;:!?()\-'"\/\[\]{}@#$%&*+=<>|~`]/g, ' ')
+    // Remove excessive whitespace
+    .replace(/\s+/g, ' ')
+    // Remove lines that are mostly garbage characters
+    .split('\n')
+    .filter(line => {
+      const cleanLine = line.replace(/[^\w\s]/g, '');
+      return cleanLine.length > line.length * 0.3; // Keep lines that are at least 30% normal characters
+    })
+    .join('\n');
+
   result.cleanedText = cleanedText.trim();
   return result;
+}
+
+/**
+ * Clean individual text fields from encoding artifacts and garbage
+ */
+function cleanTextField(text: string): string {
+  if (!text) return text;
+
+  return text
+    // Remove encoding artifacts
+    .replace(/[âÂ]+/g, ' ')
+    .replace(/[^\w\s.,;:!?()\-'"\/\[\]{}@#$%&*+=<>|~`]/g, ' ')
+    // Remove excessive whitespace
+    .replace(/\s+/g, ' ')
+    // Remove standalone garbage characters
+    .replace(/\b[âÂ]{1,10}\b/g, ' ')
+    // Clean up any remaining weird characters
+    .replace(/[\u00A0-\u00FF]{3,}/g, ' ')
+    .trim();
 }
 
 /**
@@ -249,19 +283,25 @@ function parseQuerySection(
   const queryMatch = cleanedSection.match(
     /(?:Query:|Summary:)\s*([\s\S]+?)(?=\n(?:Name:|Category:|Email:|Media Outlet:|Deadline:)|$)/i
   );
-  if (queryMatch) query.headline = queryMatch[1].trim();
+  if (queryMatch) {
+    query.headline = cleanTextField(queryMatch[1].trim());
+  }
 
   // Full text (longer description)
   const fullTextMatch = cleanedSection.match(
     /Query:\s*([\s\S]+?)(?=\n\s*(?:Requirements?:|Back to Top|------|$))/i
   );
-  if (fullTextMatch) query.fullText = fullTextMatch[1].trim();
+  if (fullTextMatch) {
+    query.fullText = cleanTextField(fullTextMatch[1].trim());
+  }
 
   // Requirements
   const requirementsMatch = cleanedSection.match(
     /Requirements?:\s*([\s\S]+?)(?=\n\s*(?:Deadline:|Contact:|Query:|Back to Top|$))/i
   );
-  if (requirementsMatch) query.requirements = requirementsMatch[1].trim();
+  if (requirementsMatch) {
+    query.requirements = cleanTextField(requirementsMatch[1].trim());
+  }
 
   // Deadline
   const deadlineMatch = cleanedSection.match(
