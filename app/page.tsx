@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Search, Filter, MessageSquare, ArrowRight, CheckCircle2, Github, ExternalLink, TrendingUp, Shield, Clock, Twitter } from "lucide-react"
 import { SignUpForm } from "@/components/signup-form"
+import { GitHubStarBadge } from "@/components/github-star-badge"
 
 export default function LandingPage() {
   return (
@@ -39,13 +40,7 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-4">
-                <Link href="https://github.com/coloredsavage/HAROFilter" target="_blank" rel="noopener noreferrer">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                    <Github className="h-4 w-4" />
-                    <span>Star on GitHub</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </div>
-                </Link>
+                <GitHubStarBadge repo="coloredsavage/HAROFilter" />
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-balance">
                 HARO Queries, Filtered for You
