@@ -45,12 +45,12 @@ export function GitHubStarBadge({ repo, className = "" }: GitHubStarBadgeProps) 
       rel="noopener noreferrer"
       className={className}
     >
-      <div className="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors shadow-lg border border-gray-700">
-        <Github className="h-4 w-4" />
-        <span className="font-medium">Star us!</span>
+      <div className="inline-flex items-center gap-1.5 bg-black text-white px-3 py-1.5 rounded-full hover:bg-gray-900 transition-colors border border-gray-700">
+        <Github className="h-3 w-3" />
+        <span className="text-sm font-medium">Star us!</span>
         <div className="flex items-center gap-1">
-          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-          <span className="font-medium">
+          <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+          <span className="text-sm font-medium">
             {isLoading ? "..." : starCount ? formatStarCount(starCount) : "0"}
           </span>
         </div>

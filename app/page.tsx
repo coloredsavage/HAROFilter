@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Filter, MessageSquare, ArrowRight, CheckCircle2, Github, ExternalLink, TrendingUp, Shield, Clock, Twitter } from "lucide-react"
+import { Search, Filter, MessageSquare, ArrowRight, CheckCircle2, Github, ExternalLink, TrendingUp, Shield, Clock, X } from "lucide-react"
 import { SignUpForm } from "@/components/signup-form"
 import { GitHubStarBadge } from "@/components/github-star-badge"
 
@@ -342,7 +342,7 @@ export default function LandingPage() {
               </Link>
               <Link href="https://x.com/colored_savage" target="_blank" rel="noopener noreferrer">
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Twitter className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
