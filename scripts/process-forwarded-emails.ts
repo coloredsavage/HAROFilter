@@ -5,8 +5,21 @@
  * Run: npm run process-forwarded
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load .env.local file
+config({ path: resolve(__dirname, '../.env.local') });
+
 async function processForwardedEmails() {
   console.log('🔄 Processing forwarded HARO emails...');
+
+  // Check if CRON_SECRET is available
+  if (!process.env.CRON_SECRET) {
+    console.error('❌ Missing CRON_SECRET environment variable');
+    console.error('Please ensure CRON_SECRET is set in your .env.local file');
+    process.exit(1);
+  }
 
   try {
     const response = await fetch('http://localhost:3000/api/process-forwarded', {
