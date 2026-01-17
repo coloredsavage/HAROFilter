@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { HaroQuery, KeywordMatch, UserQueryMatch } from '@/types/haro';
 
 /**
@@ -9,7 +9,7 @@ import { HaroQuery, KeywordMatch, UserQueryMatch } from '@/types/haro';
 export async function matchQueriesToKeywords(
   queries: HaroQuery[]
 ): Promise<UserQueryMatch[]> {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
   const matches: UserQueryMatch[] = [];
 
   try {
@@ -90,7 +90,7 @@ export async function matchQueriesToKeywords(
 export async function matchQueryToKeywords(
   query: HaroQuery
 ): Promise<KeywordMatch[]> {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
   const matches: KeywordMatch[] = [];
 
   try {
@@ -177,7 +177,7 @@ export async function createUserQueryRecords(
     return;
   }
 
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
 
   try {
     // Prepare user_queries records for insertion

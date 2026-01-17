@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { sendEmail } from '@/lib/mailer/client';
 import { generateNewMatchEmail } from '@/lib/mailer/templates/new-match';
 import { generateDigestEmail } from '@/lib/mailer/templates/daily-digest';
@@ -13,7 +13,7 @@ import { isDeadlineUrgent } from '@/lib/email/parser';
 export async function sendNewMatchNotifications(
   matches: KeywordMatch[]
 ): Promise<number> {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
   let notificationsSent = 0;
 
   try {
@@ -114,7 +114,7 @@ export async function sendNewMatchNotifications(
  * @returns Number of digests sent successfully
  */
 export async function sendDailyDigests(): Promise<number> {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
   let digestsSent = 0;
 
   try {
@@ -237,7 +237,7 @@ async function logNotification(
   status: 'sent' | 'failed' | 'bounced',
   errorMessage?: string
 ) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
 
   try {
     await supabase.from('email_notifications').insert({

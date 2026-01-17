@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 
 /**
  * Cleanup cron job
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     console.log('🧹 Starting cleanup cron job...');
 
-    const supabase = await createClient();
+    const supabase = await getSupabaseServerClient();
 
     // Calculate cutoff dates
     const thirtyDaysAgo = new Date();

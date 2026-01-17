@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSupabaseServerClient } from '@/lib/supabase/server';
 import { parseHaroEmail } from '@/lib/email/parser';
 import { matchQueryToKeywords, createUserQueryRecords } from '@/lib/email/matcher';
 import { sendNewMatchNotifications } from '@/lib/services/notification-service';
@@ -27,7 +27,7 @@ export async function processHaroEmail(
     processingTimeMs: 0,
   };
 
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
 
   try {
     // Step 1: Log processing start
@@ -137,7 +137,7 @@ export async function processHaroEmail(
  * Insert parsed queries into database
  */
 async function insertQueries(parsedEmail: ParsedEmail) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
 
   try {
     // Prepare query records
@@ -183,7 +183,7 @@ async function logProcessing(
   usersNotified: number,
   errorMessage?: string
 ) {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
 
   try {
     await supabase.from('haro_processing_logs').insert({
@@ -204,7 +204,7 @@ async function logProcessing(
  * Check if email has already been processed
  */
 export async function isEmailProcessed(emailId: string): Promise<boolean> {
-  const supabase = await createClient();
+  const supabase = await getSupabaseServerClient();
 
   try {
     const { data, error } = await supabase
