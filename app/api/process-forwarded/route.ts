@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
     // Process each email's attachments
     const allStats: ProcessingStats[] = [];
     let totalAttachmentsProcessed = 0;
+    const debugLogs: string[] = [];
 
     for (const email of emails) {
       try {
@@ -296,7 +297,17 @@ function parseEmlFile(emlContent: string): { subject: string; body: string; date
       .replace(/\n{3,}/g, '\n\n') // Collapse excessive newlines
       .trim();
 
+    // Decode quoted-printable encoding
+    body = decodeQuotedPrintable(body);
+
     console.log(`✅ EML parsing complete - Subject: "${subject.substring(0, 50)}...", Body: ${body.length} chars`);
+    console.log(`🔍 Decoded content preview: "${body.substring(0, 300).replace(/\n/g, '\\n')}..."`);
+
+    // If body is still mostly encoded or empty, try to extract from raw content
+    if (body.length < 1000 || body.includes('=') && body.length < emlContent.length / 2) {
+      console.log('⚠️  Body seems incomplete, trying raw content extraction...');
+      body = emlContent; // Use raw content as fallback
+    }
 
     return {
       subject: subject || 'HARO Email',
@@ -307,5 +318,25 @@ function parseEmlFile(emlContent: string): { subject: string; body: string; date
     console.error('Error parsing .eml file:', error);
     console.error('EML content preview:', emlContent.substring(0, 500));
     throw new Error(`Failed to parse .eml file content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Decode quoted-printable encoded text
+ */
+function decodeQuotedPrintable(text: string): string {
+  try {
+    return text
+      // Handle soft line breaks (= at end of line)
+      .replace(/=\r?\n/g, '')
+      // Decode hex sequences (=XX)
+      .replace(/=([0-9A-F]{2})/g, (match, hex) => {
+        return String.fromCharCode(parseInt(hex, 16));
+      })
+      // Clean up any remaining artifacts
+      .replace(/=$/gm, ''); // Remove trailing = that didn't get processed
+  } catch (error) {
+    console.warn('Error decoding quoted-printable:', error);
+    return text; // Return original if decoding fails
   }
 }
