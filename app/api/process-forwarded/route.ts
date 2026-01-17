@@ -56,6 +56,10 @@ export async function GET(request: NextRequest) {
             // Parse .eml content
             const emlContent = parseEmlFile(attachment.data);
 
+            console.log(`📄 EML parsed - Subject: "${emlContent.subject.substring(0, 100)}..."`);
+            console.log(`📄 Body length: ${emlContent.body.length} chars`);
+            console.log(`📄 First 200 chars: "${emlContent.body.substring(0, 200).replace(/\n/g, '\\n')}..."`);
+
             // Generate unique ID for this attachment
             const attachmentId = `${email.id}_${attachment.filename}_${Date.now()}`;
 
@@ -73,6 +77,8 @@ export async function GET(request: NextRequest) {
               emlContent.subject,
               emlContent.date
             );
+
+            console.log(`📊 Processing stats for ${attachment.filename}: queries=${stats.queriesExtracted}, errors=${stats.errors}`);
 
             allStats.push(stats);
             totalAttachmentsProcessed++;
@@ -229,43 +235,77 @@ async function extractEmlAttachments(auth: OAuth2Client, messageId: string) {
  */
 function parseEmlFile(emlContent: string): { subject: string; body: string; date: Date } {
   try {
+    console.log(`🔍 Parsing EML file - total length: ${emlContent.length} chars`);
+
     const lines = emlContent.split('\n');
     let subject = '';
     let body = '';
     let date = new Date();
     let inHeaders = true;
     let bodyLines: string[] = [];
+    let contentType = '';
+    let isMultipart = false;
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
       if (inHeaders) {
         if (line.trim() === '') {
           inHeaders = false;
+          console.log(`📧 Headers parsed - Subject: "${subject}", Content-Type: "${contentType}"`);
           continue;
+        }
+
+        // Handle multi-line headers (continuation lines start with space or tab)
+        if (line.startsWith(' ') || line.startsWith('\t')) {
+          continue; // Skip continuation lines for now
         }
 
         if (line.toLowerCase().startsWith('subject:')) {
           subject = line.substring(8).trim();
+          // Remove any encoding artifacts like =?UTF-8?Q?...?=
+          subject = subject.replace(/=\?[^?]+\?[BQ]\?([^?]+)\?=/gi, '$1');
         } else if (line.toLowerCase().startsWith('date:')) {
           try {
             date = new Date(line.substring(5).trim());
           } catch {
-            // Keep default date if parsing fails
+            console.warn(`⚠️  Failed to parse date: ${line.substring(5).trim()}`);
           }
+        } else if (line.toLowerCase().startsWith('content-type:')) {
+          contentType = line.substring(13).trim();
+          isMultipart = contentType.toLowerCase().includes('multipart');
         }
       } else {
+        // In body section
+        if (isMultipart && line.startsWith('--')) {
+          // Skip multipart boundaries for now - we'll take all content
+          continue;
+        }
         bodyLines.push(line);
       }
     }
 
-    body = bodyLines.join('\n');
+    body = bodyLines.join('\n').trim();
+
+    // Clean up body - remove common email artifacts
+    body = body
+      .replace(/Content-Type:[^\r\n]*/gi, '') // Remove Content-Type lines
+      .replace(/Content-Transfer-Encoding:[^\r\n]*/gi, '') // Remove encoding lines
+      .replace(/^--[^\r\n]*$/gm, '') // Remove boundary lines
+      .replace(/\r\n/g, '\n') // Normalize line endings
+      .replace(/\n{3,}/g, '\n\n') // Collapse excessive newlines
+      .trim();
+
+    console.log(`✅ EML parsing complete - Subject: "${subject.substring(0, 50)}...", Body: ${body.length} chars`);
 
     return {
       subject: subject || 'HARO Email',
-      body: body.trim(),
-      date,
+      body: body || emlContent, // Fallback to raw content if parsing fails
+      date: isNaN(date.getTime()) ? new Date() : date,
     };
   } catch (error) {
     console.error('Error parsing .eml file:', error);
-    throw new Error('Failed to parse .eml file content');
+    console.error('EML content preview:', emlContent.substring(0, 500));
+    throw new Error(`Failed to parse .eml file content: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
