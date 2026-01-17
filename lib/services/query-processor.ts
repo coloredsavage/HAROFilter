@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { parseHaroEmail } from '@/lib/email/parser';
 import { matchQueryToKeywords, createUserQueryRecords } from '@/lib/email/matcher';
 import { sendNewMatchNotifications } from '@/lib/services/notification-service';
@@ -137,22 +138,30 @@ export async function processHaroEmail(
  * Insert parsed queries into database
  */
 async function insertQueries(parsedEmail: ParsedEmail) {
-  const supabase = await getSupabaseServerClient();
+  // Use service role client for bulk operations that bypass RLS
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
 
   try {
-    // Prepare query records with new fields
+    // Prepare query records with correct database column names
     const queryRecords = parsedEmail.queries.map((query) => ({
       headline: query.headline,
       full_text: query.fullText,
-      requirements: query.requirements,
+      requirements: query.requirements || '',
       deadline: query.deadline.toISOString(),
-      journalist_email: query.journalistEmail,
       publication: query.publication,
-      category: query.category,
+      journalist_contact: query.journalistEmail,
       haro_email_id: query.haroEmailId,
-      haro_category: parsedEmail.category,
-      source_email_received_at: parsedEmail.receivedAt.toISOString(),
-      // New fields from schema update
+      posted_at: parsedEmail.receivedAt.toISOString(),
+      // New fields from enhanced schema
       reporter_name: query.reporterName,
       outlet_url: query.outletUrl,
       haro_query_number: query.haroQueryNumber,
@@ -166,7 +175,7 @@ async function insertQueries(parsedEmail: ParsedEmail) {
       haro_article_url: query.haroArticleUrl,
     }));
 
-    // Batch insert queries
+    // Batch insert queries (remove upsert until we understand the constraints)
     const { data, error } = await supabase
       .from('queries')
       .insert(queryRecords)

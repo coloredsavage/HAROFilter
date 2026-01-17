@@ -306,7 +306,18 @@ function parseQuerySection(
  * Validate and convert RawHaroQuery to HaroQuery
  */
 function validateQuery(raw: RawHaroQuery): HaroQuery | null {
-  if (!raw.headline || !raw.fullText || !raw.deadline) return null;
+  // For newer HARO format, we only need headline and some content
+  if (!raw.headline) return null;
+
+  // If no separate fullText, use headline as fullText
+  if (!raw.fullText && raw.headline) {
+    raw.fullText = raw.headline;
+  }
+
+  // If no deadline, set a default one
+  if (!raw.deadline) {
+    raw.deadline = 'Not specified';
+  }
 
   let deadlineDate: Date;
   try {

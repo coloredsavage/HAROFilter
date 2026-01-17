@@ -33,8 +33,6 @@ export default async function DashboardPage() {
     `)
     .order("deadline", { ascending: true })
 
-  console.log("[v0] Dashboard - Sample query:", allQueries?.[0])
-  console.log("[v0] Dashboard - Keywords:", keywordValues)
 
   const matchingQueries =
     allQueries
@@ -66,8 +64,6 @@ export default async function DashboardPage() {
         extracted_urls: query.extracted_urls || [],
         haro_article_url: query.haro_article_url,
       })) || []
-
-  console.log("[v0] Dashboard - Matching queries:", matchingQueries.length)
 
   // Get user's query statuses
   const { data: userQueries } = await supabase.from("user_queries").select("*").eq("user_id", user.id)
