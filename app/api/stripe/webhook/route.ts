@@ -5,8 +5,13 @@ import { createClient } from "@supabase/supabase-js"
 // IMPORTANT: Stripe requires Node runtime for webhooks
 export const runtime = "nodejs"
 
-// Initialize Stripe (no apiVersion)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+// Initialize Stripe with lazy loading to avoid build-time errors
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not set')
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY)
+}
 
 // Use service role key for webhook operations (bypasses RLS)
 const supabase = createClient(
@@ -28,6 +33,7 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event
 
   try {
+    const stripe = getStripe()
     event = stripe.webhooks.constructEvent(
       body,
       sig,
