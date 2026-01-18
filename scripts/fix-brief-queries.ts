@@ -25,10 +25,17 @@ async function fixBriefQueries() {
     process.exit(1);
   }
 
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('❌ Missing Supabase configuration in .env.local');
+    console.error('Required: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY');
+    process.exit(1);
+  }
+
   // Create Supabase client with service role
-  const supabaseUrl = 'https://krmjbhzlatzyjolwhdyn.supabase.co'
-  const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtybWpiaHpsYXR6eWpvbHdoZHluIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2ODYxODE2NSwiZXhwIjoyMDg0MTk0MTY1fQ.fWqypCKFAXPxNQdi22J4u7YtALeprE0Pck2MC3b5aks'
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
   try {
     // Step 1: Find all queries with "Brief query" or short content
