@@ -88,6 +88,7 @@ function cleanDisplayText(text: string): string {
 export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
   const [status, setStatus] = useState(userQuery?.status || null)
   const [loading, setLoading] = useState<string | null>(null)
+  const [isExpanded, setIsExpanded] = useState(false)
   const router = useRouter()
 
   const deadline = new Date(query.deadline)
@@ -218,7 +219,19 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground line-clamp-3">{cleanDisplayText(query.summary)}</p>
+        <div className="space-y-2">
+          <p className={`text-sm text-muted-foreground ${!isExpanded ? "line-clamp-3" : ""}`}>
+            {cleanDisplayText(query.summary)}
+          </p>
+          {query.summary && query.summary.length > 150 && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
+            >
+              {isExpanded ? "Show Less" : "Show More"}
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
           <div className="flex items-center gap-2">
