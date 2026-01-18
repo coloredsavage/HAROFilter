@@ -79,7 +79,7 @@ export default async function DashboardPage() {
         // Map database columns to component expected format
         id: query.id,
         title: query.headline,
-        summary: query.requirements || query.full_text, // Use requirements as detailed description
+        summary: query.full_text || query.requirements, // Use full_text as detailed description (richer content)
         outlet: query.publication,
         category: null, // Will be determined from email subject
         deadline: query.deadline,
