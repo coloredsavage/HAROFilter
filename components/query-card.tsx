@@ -104,7 +104,10 @@ function cleanDisplayText(text: string): string {
 
 export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
   // Map database status back to UI status
-  const uiStatus = userQuery?.status === "ignored" ? "saved" : userQuery?.status || null
+  const uiStatus: "saved" | "responded" | null =
+    userQuery?.status === "ignored" ? "saved" :
+    userQuery?.status === "responded" ? "responded" :
+    null
   const [status, setStatus] = useState<"saved" | "responded" | null>(uiStatus)
   const [loading, setLoading] = useState<string | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
