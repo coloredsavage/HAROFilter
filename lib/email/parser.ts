@@ -404,8 +404,8 @@ function parseQuerySection(
   // Use cleaned text for further parsing
   const cleanedSection = aiDetection.cleanedText;
 
-  // Extract reporter name from "Name: Reporter Name" pattern (single line)
-  const nameMatch = cleanedSection.match(/Name:\s*([^C]{1,100}?)(?=\s+Category:)/i);
+  // Extract reporter name from "Name: Reporter Name Category:" pattern
+  const nameMatch = cleanedSection.match(/Name:\s*([^]+?)\s+Category:/i);
   if (nameMatch) {
     query.reporterName = cleanTextField(nameMatch[1].trim());
   }
@@ -419,17 +419,18 @@ function parseQuerySection(
   // Query / Headline - parse the actual summary text
   let queryMatch = null;
 
-  // Try to match "20 ) Summary: Engineer or manufacturer..." with length limits
-  queryMatch = cleanedSection.match(/\d+\s*\)\s*Summary:\s*([^N]{1,200}?)(?=\s+Name:)/i);
+  // Extract headline using more robust patterns
+  // Try to match "4 ) Summary: Gardeners for tips on germinating seeds... Name:"
+  queryMatch = cleanedSection.match(/(?:\d+\s*\)\s*)?Summary:\s*([^]+?)\s+Name:/i);
 
-  // If not found, try "Summary: Text" format
+  // If not found, try "Summary: Text Name:" without numbers
   if (!queryMatch) {
-    queryMatch = cleanedSection.match(/Summary:\s*([^N]{1,200}?)(?=\s+Name:)/i);
+    queryMatch = cleanedSection.match(/Summary:\s*([^]+?)\s+Name:/i);
   }
 
-  // If not found, try "Query: Text" format
+  // If not found, try "Query: Text Name:" format
   if (!queryMatch) {
-    queryMatch = cleanedSection.match(/Query:\s*([^N]{1,200}?)(?=\s+Name:)/i);
+    queryMatch = cleanedSection.match(/(?:\d+\s*\)\s*)?Query:\s*([^]+?)\s+Name:/i);
   }
 
   if (queryMatch) {
@@ -437,8 +438,8 @@ function parseQuerySection(
     query.fullText = cleanTextField(queryMatch[1].trim());
   }
 
-  // Description/Requirements - extract the detailed explanation (single line format)
-  const requirementsMatch = cleanedSection.match(/Requirements?:\s*([^]{1,1000})$/i);
+  // Description/Requirements - extract detailed explanation from end of section
+  const requirementsMatch = cleanedSection.match(/Requirements?:\s*([^]+?)$/i);
   if (requirementsMatch) {
     const description = cleanTextField(requirementsMatch[1].trim());
     query.requirements = description;
@@ -449,24 +450,18 @@ function parseQuerySection(
     }
   }
 
-  // Deadline (single line)
-  const deadlineMatch = cleanedSection.match(/Deadline:\s*([^R]{1,100}?)(?=\s+Requirements?:|$)/i);
-  if (deadlineMatch) {
-    query.deadline = cleanTextField(deadlineMatch[1].trim());
-  }
-
-  // Contact email - detect if it's HARO reply email or direct (single line)
-  const emailMatch = cleanedSection.match(/Email:\s*([^M]{1,150}?)(?=\s+Media Outlet:)/i);
+  // Contact email - extract "Email: email@example.com Media Outlet:"
+  const emailMatch = cleanedSection.match(/Email:\s*([^]+?)\s+Media Outlet:/i);
   if (emailMatch) {
     const email = cleanTextField(emailMatch[1].trim());
     query.journalistEmail = email && email.includes('@') ? email : null;
     query.isDirectEmail = !email.includes('helpareporter.com');
   }
 
-  // Media outlet name and URL (single line)
-  const outletMatch = cleanedSection.match(/Media Outlet:\s*([^D]{1,150}?)(?=\s+Deadline:)/i);
+  // Media outlet name and URL - extract "Media Outlet: Name Deadline:"
+  const outletMatch = cleanedSection.match(/Media Outlet:\s*([^]+?)\s+Deadline:/i);
   if (outletMatch) {
-    const outletText = outletMatch[1].trim();
+    const outletText = cleanTextField(outletMatch[1].trim());
     // Extract URL from parentheses if present
     const urlMatch = outletText.match(/^([^(]+)\s*\(([^)]+)\)$/);
     if (urlMatch) {
@@ -475,8 +470,14 @@ function parseQuerySection(
         query.outletUrl = urlMatch[2].trim();
       }
     } else {
-      query.publication = cleanTextField(outletText);
+      query.publication = outletText;
     }
+  }
+
+  // Deadline - extract "Deadline: date Requirements:" or "Deadline: date$"
+  const deadlineMatch = cleanedSection.match(/Deadline:\s*([^]+?)(?:\s+Requirements?:|$)/i);
+  if (deadlineMatch) {
+    query.deadline = cleanTextField(deadlineMatch[1].trim());
   }
 
   // Special flags detection
