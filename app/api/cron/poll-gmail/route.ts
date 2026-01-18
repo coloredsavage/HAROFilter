@@ -14,9 +14,17 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    // Verify cron secret for security (optional but recommended)
+    // Verify cron secret for security (required)
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      return NextResponse.json(
+        { error: 'CRON_SECRET is not configured' },
+        { status: 500 }
+      );
+    }
+
     const authHeader = request.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

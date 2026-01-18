@@ -57,12 +57,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Stripe checkout session
+    const priceId = process.env.STRIPE_PRICE_ID;
+    if (!priceId) {
+      return NextResponse.json(
+        { error: "STRIPE_PRICE_ID not configured" },
+        { status: 500 }
+      );
+    }
+
     const stripe = getStripe()
     const session = await stripe.checkout.sessions.create({
       mode: "payment", // one-time payment
       line_items: [
         {
-          price: "price_1SqSDOPRTJysFgaUhzdcPo7y",
+          price: priceId,
           quantity: 1,
         },
       ],

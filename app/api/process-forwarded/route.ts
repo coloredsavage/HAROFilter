@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Initialize Gmail API client for untttld@gmail.com
+ * Initialize Gmail API client
  */
 function createGmailClient(): OAuth2Client {
   const oauth2Client = new google.auth.OAuth2(
