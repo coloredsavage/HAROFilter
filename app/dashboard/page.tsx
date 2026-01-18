@@ -107,7 +107,7 @@ export default async function DashboardPage() {
 
   // Categorize queries
   const newQueries = matchingQueries.filter((q) => !userQueryMap.has(q.id))
-  const savedQueries = matchingQueries.filter((q) => userQueryMap.get(q.id)?.status === "saved")
+  const savedQueries = matchingQueries.filter((q) => userQueryMap.get(q.id)?.status === "ignored") // "ignored" in DB maps to "saved" in UI
   const respondedQueries = matchingQueries.filter((q) => userQueryMap.get(q.id)?.status === "responded")
 
   return (

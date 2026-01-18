@@ -242,7 +242,8 @@ function cleanEmailBody(body: string): string {
     // Remove sponsored/advertisement content
     .replace(/earn high commissions[\s\S]*?become an affiliate[^.]*\./gi, ' ')
     .replace(/sponsored[\s\S]*?queries from/gi, 'Queries from')
-    .replace(/\*+\s*INDEX\s*\*+[\s\S]*?\*+/gi, ' ')
+    // Remove INDEX table only, not the content after
+    .replace(/\*+\s*INDEX\s*\*+[\s\S]*?\*{4,}\s*/gi, '')
 
     // Remove social media and promotional content
     .replace(/follow us on \w+[\s\S]*?https?:\/\/[^\s]+/gi, ' ')
@@ -280,8 +281,8 @@ function cleanEmailBody(body: string): string {
 function splitIntoQueries(body: string): string[] {
   // First, find where queries actually start (after index/promotional content)
   const queryStartIndicators = [
-    /\*+\s*$/m, // End of index section with asterisks
-    /(?:\d+\s*\)\s*Summary:|Summary:)/i, // Numbered summaries
+    /\d+\s*\)\s*Summary:/i, // Look for numbered summaries like "13) Summary:"
+    /Summary:\s*\w/i, // Or just "Summary:" followed by content
     /^Business and Finance/im, // Category headers
     /^Health and Pharma/im,
     /^General$/im,
@@ -291,16 +292,23 @@ function splitIntoQueries(body: string): string[] {
   ];
 
   let queryStartIndex = 0;
+  console.log(`📧 Body length: ${body.length}, first 200 chars: "${body.substring(0, 200)}..."`);
+
   for (const pattern of queryStartIndicators) {
     const match = body.search(pattern);
-    if (match > queryStartIndex && match > 100) { // Must be past initial content
+    console.log(`🔍 Pattern ${pattern}: ${match !== -1 ? `found at ${match}` : 'not found'}`);
+    if (match !== -1) { // Found a match
       queryStartIndex = match;
+      console.log(`🎯 Using query start at index ${queryStartIndex}`);
       break;
     }
   }
 
+  console.log(`📍 Final query start index: ${queryStartIndex}`);
+
   // Extract only the query content portion
   const queryContent = body.substring(queryStartIndex);
+  console.log(`📄 Query content length: ${queryContent.length}, first 100 chars: "${queryContent.substring(0, 100)}..."`);;
 
   // Split into sections using multiple patterns
   let sections: string[] = [];
@@ -315,8 +323,10 @@ function splitIntoQueries(body: string): string[] {
 
   for (const pattern of splitPatterns) {
     const testSplit = queryContent.split(pattern);
+    console.log(`🔄 Pattern ${pattern} found ${testSplit.length} sections`);
     if (testSplit.length > 1) {
       sections = testSplit;
+      console.log(`✅ Using pattern ${pattern} - found ${sections.length} sections`);
       break;
     }
   }
@@ -328,13 +338,14 @@ function splitIntoQueries(body: string): string[] {
     let currentSection = '';
 
     for (const line of lines) {
-      if (/^\d+\s*\)\s*Summary:/i.test(line) || /^\d+\s*\)\s*Query:/i.test(line)) {
+      // More flexible matching for numbered sections
+      if (/^\d+\s*\)\s*(Summary:|[A-Za-z\s]+Name:)/i.test(line)) {
         if (currentSection.trim()) {
           sections.push(currentSection.trim());
         }
         currentSection = line;
       } else {
-        currentSection += ' ' + line;
+        currentSection += '\n' + line;
       }
     }
 
@@ -343,17 +354,36 @@ function splitIntoQueries(body: string): string[] {
     }
   }
 
+  // Final fallback: Split on numbered entries directly
+  if (sections.length <= 1) {
+    const numberedSections = queryContent.split(/(?=\n\d+\)\s*Summary:)/);
+    if (numberedSections.length > 1) {
+      sections = numberedSections.filter(s => s.trim().length > 0);
+    }
+  }
+
   console.log(`🔄 Split into ${sections.length} potential sections`);
+
+  // Debug: Show what sections were created
+  sections.forEach((section, index) => {
+    console.log(`📄 Section ${index + 1}: length=${section.length}, preview="${section.substring(0, 100)}..."`);
+  });
 
   // Clean and validate sections
   const validSections = sections
     .map(s => s.trim())
     .filter(s => {
       // Must have minimum length
-      if (s.length < 50) return false;
+      if (s.length < 50) {
+        console.log(`❌ Rejected section - Too short: ${s.length} chars`);
+        return false;
+      }
 
       // Must contain either "Summary:" or "Query:"
-      if (!(/Summary:|Query:/i.test(s))) return false;
+      if (!(/Summary:|Query:/i.test(s))) {
+        console.log(`❌ Rejected section - No Summary/Query found in: "${s.substring(0, 50)}..."`);
+        return false;
+      }
 
       // Must contain essential query information (Name, Email, etc.)
       const hasName = /Name:\s*[^\s]/i.test(s);
@@ -362,13 +392,19 @@ function splitIntoQueries(body: string): string[] {
 
       if (!hasName || !hasEmail || !hasDeadline) {
         console.log(`❌ Rejected section - Missing fields: Name:${hasName} Email:${hasEmail} Deadline:${hasDeadline}`);
+        console.log(`   Content: "${s.substring(0, 100)}..."`);
         return false;
       }
 
       // Skip index-only content or category headers
       const isIndexContent = /^(Business and Finance|Health and Pharma|General|Technology|Lifestyle|Podcasts|INDEX)[\s\d\)]*$/im.test(s);
 
-      return !isIndexContent;
+      const isValid = !isIndexContent;
+
+      console.log(`✅ Section validation passed: length=${s.length}, hasName=${hasName}, hasEmail=${hasEmail}, hasDeadline=${hasDeadline}, isIndex=${isIndexContent}, valid=${isValid}`);
+      console.log(`📋 Section preview: "${s.substring(0, 100)}..."`);
+
+      return isValid;
     })
     .slice(0, 20); // Limit to reasonable number
 
@@ -438,9 +474,23 @@ function parseQuerySection(
     query.fullText = cleanTextField(queryMatch[1].trim());
   }
 
-  // Description/Requirements - extract detailed explanation from end of section
-  const requirementsMatch = cleanedSection.match(/Requirements?:\s*([^]+?)$/i);
-  if (requirementsMatch) {
+  // Description/Requirements - extract detailed explanation from section
+  // First try to find explicit "Requirements:" section
+  let requirementsMatch = cleanedSection.match(/Requirements?:\s*([^]+?)$/i);
+
+  // If no "Requirements:" found, try to extract from "Query:" section
+  if (!requirementsMatch) {
+    const queryContentMatch = cleanedSection.match(/Query:\s*([^]+?)(?:\s*Back to Top|$)/i);
+    if (queryContentMatch) {
+      const queryContent = cleanTextField(queryContentMatch[1].trim());
+      query.requirements = queryContent;
+
+      // Set full detailed content as fullText
+      if (queryContent.length > (query.fullText?.length || 0)) {
+        query.fullText = queryContent;
+      }
+    }
+  } else {
     const description = cleanTextField(requirementsMatch[1].trim());
     query.requirements = description;
 
@@ -521,9 +571,20 @@ function validateQuery(raw: RawHaroQuery): HaroQuery | null {
     deadlineDate.setDate(deadlineDate.getDate() + 7);
   }
 
+  // Determine the best fullText content
+  let fullText = '';
+  if (raw.requirements && raw.requirements.length > (raw.fullText?.length || 0)) {
+    // Use requirements if it's longer and more detailed
+    fullText = raw.requirements;
+  } else if (raw.fullText) {
+    fullText = raw.fullText;
+  } else {
+    fullText = raw.headline || '';
+  }
+
   return {
     headline: raw.headline,
-    fullText: raw.fullText || raw.headline || '',
+    fullText: fullText,
     requirements: raw.requirements || '',
     deadline: deadlineDate,
     journalistEmail: raw.journalistEmail || null,

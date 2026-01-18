@@ -103,7 +103,9 @@ function cleanDisplayText(text: string): string {
 }
 
 export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
-  const [status, setStatus] = useState(userQuery?.status || null)
+  // Map database status back to UI status
+  const uiStatus = userQuery?.status === "ignored" ? "saved" : userQuery?.status || null
+  const [status, setStatus] = useState<"saved" | "responded" | null>(uiStatus)
   const [loading, setLoading] = useState<string | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const router = useRouter()
@@ -125,12 +127,21 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
 
     try {
       if (status === newStatus) {
-        // Remove status
+        // Remove status - reset to 'new' instead of deleting
         const { error } = await supabase
           .from("user_queries")
-          .delete()
-          .eq("user_id", userId)
-          .eq("query_id", query.id)
+          .upsert(
+            {
+              user_id: userId,
+              query_id: query.id,
+              status: "new",
+              matched_keywords: [],
+            },
+            {
+              onConflict: "user_id,query_id",
+              ignoreDuplicates: false
+            }
+          )
 
         if (error) {
           console.error('Error removing query status:', error)
@@ -139,6 +150,9 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
 
         setStatus(null)
       } else {
+        // Map 'saved' to 'ignored' for database compatibility
+        const dbStatus = newStatus === "saved" ? "ignored" : newStatus;
+
         // Upsert status
         const { error } = await supabase
           .from("user_queries")
@@ -146,12 +160,13 @@ export function QueryCard({ query, userId, userQuery }: QueryCardProps) {
             {
               user_id: userId,
               query_id: query.id,
-              status: newStatus,
-              responded_at: newStatus === "responded" ? new Date().toISOString() : null,
+              status: dbStatus,
+              matched_keywords: [],
             },
             {
               onConflict: "user_id,query_id",
-            },
+              ignoreDuplicates: false
+            }
           )
 
         if (error) {
