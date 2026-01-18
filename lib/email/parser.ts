@@ -305,17 +305,48 @@ function splitIntoQueries(body: string): string[] {
   // Split into sections using multiple patterns
   let sections: string[] = [];
 
-  // Try splitting by numbered summaries first (1) Summary:, 2) Summary:, etc.)
-  const numberedSections = queryContent.split(/(?=\d+\s*\)\s*Summary:)/i);
-  if (numberedSections.length > 1) {
-    sections = numberedSections;
-  } else {
-    // Fallback: try splitting by "Summary:" or "Query:" patterns
-    sections = queryContent.split(/(?=(?:Summary:|Query:))/i);
+  // Multiple aggressive splitting strategies
+  const splitPatterns = [
+    /(?=\d+\s*\)\s*Summary:)/i, // Split on "1) Summary:", "2) Summary:", etc.
+    /(?=Name:\s*[^Name]+?Category:)/i, // Split when we see Name: followed by Category:
+    /(?=Summary:[^Summary]+?Name:)/i, // Split on Summary: followed by Name:
+    /(?=Query:[^Query]+?Name:)/i, // Split on Query: followed by Name:
+  ];
+
+  for (const pattern of splitPatterns) {
+    const testSplit = queryContent.split(pattern);
+    if (testSplit.length > 1) {
+      sections = testSplit;
+      break;
+    }
   }
 
-  // Clean and filter sections to only include actual queries
-  return sections
+  // If no pattern worked, try aggressive line-based splitting
+  if (sections.length <= 1) {
+    // Look for lines that start with numbers followed by Summary or Query
+    const lines = queryContent.split(/\n+/);
+    let currentSection = '';
+
+    for (const line of lines) {
+      if (/^\d+\s*\)\s*Summary:/i.test(line) || /^\d+\s*\)\s*Query:/i.test(line)) {
+        if (currentSection.trim()) {
+          sections.push(currentSection.trim());
+        }
+        currentSection = line;
+      } else {
+        currentSection += ' ' + line;
+      }
+    }
+
+    if (currentSection.trim()) {
+      sections.push(currentSection.trim());
+    }
+  }
+
+  console.log(`🔄 Split into ${sections.length} potential sections`);
+
+  // Clean and validate sections
+  const validSections = sections
     .map(s => s.trim())
     .filter(s => {
       // Must have minimum length
@@ -325,14 +356,24 @@ function splitIntoQueries(body: string): string[] {
       if (!(/Summary:|Query:/i.test(s))) return false;
 
       // Must contain essential query information (Name, Email, etc.)
-      const hasRequiredFields = /Name:|Email:|Media Outlet:|Deadline:/i.test(s);
+      const hasName = /Name:\s*[^\s]/i.test(s);
+      const hasEmail = /Email:\s*[^\s]/i.test(s);
+      const hasDeadline = /Deadline:\s*[^\s]/i.test(s);
+
+      if (!hasName || !hasEmail || !hasDeadline) {
+        console.log(`❌ Rejected section - Missing fields: Name:${hasName} Email:${hasEmail} Deadline:${hasDeadline}`);
+        return false;
+      }
 
       // Skip index-only content or category headers
       const isIndexContent = /^(Business and Finance|Health and Pharma|General|Technology|Lifestyle|Podcasts|INDEX)[\s\d\)]*$/im.test(s);
 
-      return hasRequiredFields && !isIndexContent;
+      return !isIndexContent;
     })
-    .slice(0, 50); // Limit to reasonable number of queries
+    .slice(0, 20); // Limit to reasonable number
+
+  console.log(`✅ Found ${validSections.length} valid query sections`);
+  return validSections;
 }
 
 /**
@@ -364,9 +405,9 @@ function parseQuerySection(
   const cleanedSection = aiDetection.cleanedText;
 
   // Extract reporter name from "Name: Reporter Name" pattern (single line)
-  const nameMatch = cleanedSection.match(/Name:\s*([^]+?)(?=\s+Category:)/i);
+  const nameMatch = cleanedSection.match(/Name:\s*([^C]{1,100}?)(?=\s+Category:)/i);
   if (nameMatch) {
-    query.reporterName = nameMatch[1].trim();
+    query.reporterName = cleanTextField(nameMatch[1].trim());
   }
 
   // Extract query number from section (e.g., "1) Summary:" or "Query #5")
@@ -378,17 +419,17 @@ function parseQuerySection(
   // Query / Headline - parse the actual summary text
   let queryMatch = null;
 
-  // Try to match "20 ) Summary: Engineer or manufacturer..."
-  queryMatch = cleanedSection.match(/\d+\s*\)\s*Summary:\s*([^]+?)(?=\s+Name:)/i);
+  // Try to match "20 ) Summary: Engineer or manufacturer..." with length limits
+  queryMatch = cleanedSection.match(/\d+\s*\)\s*Summary:\s*([^N]{1,200}?)(?=\s+Name:)/i);
 
   // If not found, try "Summary: Text" format
   if (!queryMatch) {
-    queryMatch = cleanedSection.match(/Summary:\s*([^]+?)(?=\s+Name:)/i);
+    queryMatch = cleanedSection.match(/Summary:\s*([^N]{1,200}?)(?=\s+Name:)/i);
   }
 
   // If not found, try "Query: Text" format
   if (!queryMatch) {
-    queryMatch = cleanedSection.match(/Query:\s*([^]+?)(?=\s+Name:)/i);
+    queryMatch = cleanedSection.match(/Query:\s*([^N]{1,200}?)(?=\s+Name:)/i);
   }
 
   if (queryMatch) {
@@ -397,7 +438,7 @@ function parseQuerySection(
   }
 
   // Description/Requirements - extract the detailed explanation (single line format)
-  const requirementsMatch = cleanedSection.match(/Requirements?:\s*([^]+?)$/i);
+  const requirementsMatch = cleanedSection.match(/Requirements?:\s*([^]{1,1000})$/i);
   if (requirementsMatch) {
     const description = cleanTextField(requirementsMatch[1].trim());
     query.requirements = description;
@@ -409,21 +450,21 @@ function parseQuerySection(
   }
 
   // Deadline (single line)
-  const deadlineMatch = cleanedSection.match(/Deadline:\s*([^]+?)(?=\s+Requirements?:|$)/i);
+  const deadlineMatch = cleanedSection.match(/Deadline:\s*([^R]{1,100}?)(?=\s+Requirements?:|$)/i);
   if (deadlineMatch) {
-    query.deadline = deadlineMatch[1].trim();
+    query.deadline = cleanTextField(deadlineMatch[1].trim());
   }
 
   // Contact email - detect if it's HARO reply email or direct (single line)
-  const emailMatch = cleanedSection.match(/Email:\s*([^]+?)(?=\s+Media Outlet:)/i);
+  const emailMatch = cleanedSection.match(/Email:\s*([^M]{1,150}?)(?=\s+Media Outlet:)/i);
   if (emailMatch) {
-    const email = emailMatch[1].trim();
+    const email = cleanTextField(emailMatch[1].trim());
     query.journalistEmail = email && email.includes('@') ? email : null;
     query.isDirectEmail = !email.includes('helpareporter.com');
   }
 
   // Media outlet name and URL (single line)
-  const outletMatch = cleanedSection.match(/Media Outlet:\s*([^]+?)(?=\s+Deadline:)/i);
+  const outletMatch = cleanedSection.match(/Media Outlet:\s*([^D]{1,150}?)(?=\s+Deadline:)/i);
   if (outletMatch) {
     const outletText = outletMatch[1].trim();
     // Extract URL from parentheses if present
@@ -434,7 +475,7 @@ function parseQuerySection(
         query.outletUrl = urlMatch[2].trim();
       }
     } else {
-      query.publication = outletText;
+      query.publication = cleanTextField(outletText);
     }
   }
 
