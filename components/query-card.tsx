@@ -78,6 +78,23 @@ function cleanDisplayText(text: string): string {
     .replace(/donâÂt/g, "don't")
     .replace(/canâÂt/g, "can't")
     .replace(/wonâÂt/g, "won't")
+    // Remove HARO footer and promotional content
+    .replace(/Forwarded this email\? Join HARO today\.?/gi, '')
+    .replace(/_{3,}|_{10,}/g, '') // Remove lines of underscores
+    .replace(/-{3,}|-{10,}/g, '') // Remove lines of dashes
+    .replace(/={3,}|={10,}/g, '') // Remove lines of equals signs
+    .replace(/Please leave your pitch below so that we do not miss your email\.?/gi, '')
+    .replace(/\(The text of your submission will be a pitch for an interview, and will not be used in the actual article\)/gi, '')
+    .replace(/The text of your submission will be a pitch for an interview, and will not be used in the actual article/gi, '')
+    .replace(/Join HARO today\.?/gi, '')
+    .replace(/\. Forwarded this email\?/gi, '')
+    .replace(/Back to Top \d+\)/gi, '') // Remove "Back to Top 3)" style text
+    .replace(/Summary:/gi, '') // Remove standalone "Summary:" labels
+    .replace(/Category:/gi, '') // Remove standalone "Category:" labels
+    .replace(/Media Outlet:/gi, '') // Remove standalone "Media Outlet:" labels
+    .replace(/Deadline:/gi, '') // Remove standalone "Deadline:" labels
+    .replace(/Name:/gi, '') // Remove standalone "Name:" labels
+    .replace(/Email:/gi, '') // Remove standalone "Email:" labels
     // Remove any remaining invalid characters (keep normal punctuation and symbols)
     .replace(/[^\w\s.,;:!?()\-'"\/\[\]{}@#$%&*+=<>|~`]/g, ' ')
     // Clean up excessive whitespace
