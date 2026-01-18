@@ -79,7 +79,9 @@ export default async function DashboardPage() {
         // Map database columns to component expected format
         id: query.id,
         title: query.headline,
-        summary: query.full_text || query.requirements, // Use full_text as detailed description (richer content)
+        summary: query.full_text === query.headline
+          ? (query.requirements || "Brief query - contact reporter for full details")
+          : (query.full_text || query.requirements), // Avoid duplicate content when full_text matches headline
         outlet: query.publication,
         category: null, // Will be determined from email subject
         deadline: query.deadline,
